@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="vGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FDE7E9" />
+      <stop offset="60%" stopColor="#F2B6C2" />
+      <stop offset="100%" stopColor="#8B1E3F" />
+    </linearGradient>
+    <linearGradient id="orbitGrad" x1="8" y1="36" x2="56" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#D4AF97" stopOpacity="0.2" />
+      <stop offset="40%" stopColor="#F2B6C2" stopOpacity="0.9" />
+      <stop offset="70%" stopColor="#FDE7E9" stopOpacity="1" />
+      <stop offset="100%" stopColor="#8B1E3F" stopOpacity="0.2" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Neutral Background Squircle -->
+  <rect width="64" height="64" rx="14" fill="#1A0F13" />
+
+  <!-- Background Orbit Glow -->
+  <ellipse cx="32" cy="34" rx="22" ry="8" transform="rotate(-15 32 34)" fill="none" stroke="rgba(139,30,63,0.4)" stroke-width="3" filter="url(#glow)" />
+
+  <!-- Stylized Serif Letter "V" -->
+  <path d="M19 19 H27 L33 43 L39 19 H45 L35.5 48 H29.5 Z" fill="url(#vGrad)" />
+
+  <!-- Luminous Foreground Orbit Ring -->
+  <path d="M12 37 C14 43, 46 39, 52 30 C56 24, 30 25, 14 34" fill="none" stroke="url(#orbitGrad)" stroke-width="1.6" stroke-linecap="round" filter="url(#glow)" />
+
+  <!-- 4-Point Starburst Sparkle at top right of V -->
+  <g transform="translate(42, 18)" filter="url(#glow)">
+    <!-- Vertical sparkle -->
+    <path d="M0 -7 Q0 0 7 0 Q0 0 0 7 Q0 0 -7 0 Q0 0 0 -7 Z" fill="#F8EDEB" />
+    <!-- Center bright core -->
+    <circle cx="0" cy="0" r="1.2" fill="#FFFFFF" />
+  </g>
+</svg>
