@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -6,59 +6,33 @@ import LandingPage from "./pages/LandingPage";
 import { LoginPage, RegisterPage } from "./pages/AuthPages";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import AuthenticatedHome from "./pages/AuthenticatedHome";
+import ProfileOnboarding from "./pages/ProfileOnboarding";
+import ProfileEdit from "./pages/ProfileEdit";
+import Discovery from "./pages/Discovery";
+import LikesPage from "./pages/LikesPage";
+import MatchesPage from "./pages/MatchesPage";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AnimatedRoseBackground from "./components/ui/AnimatedRoseBackground";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 /* ============================================================
-   Route placeholder definitions
+   Smart root redirect after login/register:
+   - if not authenticated → /login
+   - if authenticated but profile incomplete → /onboarding
+   - if authenticated and profile complete → /app
+   ============================================================ */
+function SmartRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.profileCompleted) return <Navigate to="/onboarding" replace />;
+  return <Navigate to="/app" replace />;
+}
+
+/* ============================================================
+   Route placeholder definitions (future batches)
    ============================================================ */
 const placeholderRoutes = [
-  {
-    path: "/discover",
-    props: {
-      title: "Discover",
-      description: "Browse and swipe through curated profiles matched to your preferences.",
-      icon: "✦",
-      backLabel: "Back Home",
-    },
-  },
-  {
-    path: "/profile/setup",
-    props: {
-      title: "Profile Setup",
-      description: "Complete your profile with photos, interests, and preferences.",
-      icon: "👤",
-      backLabel: "Back Home",
-    },
-  },
-  {
-    path: "/profile/edit",
-    props: {
-      title: "Edit Profile",
-      description: "Update your photos, bio, and compatibility preferences.",
-      icon: "✏️",
-      backLabel: "Back Home",
-    },
-  },
-  {
-    path: "/likes",
-    props: {
-      title: "Your Likes",
-      description: "See who's been interested in your profile and make your move.",
-      icon: "♥",
-      backLabel: "Back Home",
-    },
-  },
-  {
-    path: "/matches",
-    props: {
-      title: "Your Matches",
-      description: "People you've mutually liked. The conversation starts here.",
-      icon: "💫",
-      backLabel: "Back Home",
-    },
-  },
   {
     path: "/chat",
     props: {
@@ -112,12 +86,89 @@ function AppInner() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* Protected authenticated routes */}
+            {/* Smart post-auth redirect */}
+            <Route path="/redirect" element={<SmartRedirect />} />
+
+            {/* Protected: multi-step onboarding (shown when profileCompleted = false) */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <ProfileOnboarding />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: profile viewing / editing */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/edit"
+              element={
+                <ProtectedRoute>
+                  <ProfileEdit />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: authenticated home / dashboard */}
             <Route
               path="/app"
               element={
                 <ProtectedRoute>
                   <AuthenticatedHome />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: discovery feed */}
+            <Route
+              path="/discover"
+              element={
+                <ProtectedRoute>
+                  <Discovery />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: likes pages (received & sent) */}
+            <Route
+              path="/likes"
+              element={
+                <ProtectedRoute>
+                  <LikesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/likes/received"
+              element={
+                <ProtectedRoute>
+                  <LikesPage defaultTab="received" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/likes/sent"
+              element={
+                <ProtectedRoute>
+                  <LikesPage defaultTab="sent" />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: matches page */}
+            <Route
+              path="/matches"
+              element={
+                <ProtectedRoute>
+                  <MatchesPage />
                 </ProtectedRoute>
               }
             />
