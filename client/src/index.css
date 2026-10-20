@@ -1,0 +1,506 @@
+/* Google Fonts — must precede @tailwindcss import */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+/* ============================================================
+   VELVET Design System — Global CSS
+   ============================================================ */
+
+/* CSS Custom Properties */
+@theme {
+  /* Official VELVET Batch 2 Palette */
+  --color-deep-burgundy: #3A0D1A;
+  --color-wine-red: #8B1E3F;
+  --color-blush-pink: #F2B6C2;
+  --color-soft-rose: #FDE7E9;
+  --color-dark-neutral: #1A0F13;
+  --color-warm-cream: #F8EDEB;
+  --color-rose-gold: #D4AF97;
+
+  /* Brand Colors */
+  --color-velvet-900: #1A0F13;
+  --color-velvet-800: #3A0D1A;
+  --color-velvet-700: #541426;
+  --color-velvet-600: #6d1933;
+  --color-velvet-500: #8B1E3F;
+  --color-velvet-400: #ad2b52;
+  --color-velvet-300: #cf3d66;
+  --color-velvet-200: #F2B6C2;
+  --color-velvet-100: #FDE7E9;
+  --color-velvet-50: #F8EDEB;
+
+  --color-wine-900: #1a0010;
+  --color-wine-800: #2d0018;
+  --color-wine-700: #4a0028;
+  --color-wine-600: #6b0038;
+  --color-wine-500: #8b0045;
+  --color-wine-400: #a8005a;
+  --color-wine-300: #c8006e;
+  --color-wine-200: #e0408a;
+  --color-wine-100: #f27aaa;
+
+  --color-blush-500: #c97a96;
+  --color-blush-400: #d9a0b4;
+  --color-blush-300: #e8c4d0;
+  --color-blush-200: #f2dae0;
+  --color-blush-100: #faf0f2;
+
+  --color-cream-500: #8a7060;
+  --color-cream-400: #b89880;
+  --color-cream-300: #d4bca8;
+  --color-cream-200: #e8d8cc;
+  --color-cream-100: #f5ede8;
+  --color-cream-50: #fdf8f5;
+
+  --color-ink-900: #0a0608;
+  --color-ink-800: #120d10;
+  --color-ink-700: #1e1418;
+  --color-ink-600: #2e1e24;
+  --color-ink-500: #3d2830;
+  --color-ink-400: #5a3d48;
+  --color-ink-300: #7a5a65;
+  --color-ink-200: #a08898;
+  --color-ink-100: #c8b8c0;
+
+  /* Font Families */
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  /* Spacing */
+  --spacing-section: 6rem;
+  --spacing-container: 1.5rem;
+
+  /* Transitions */
+  --transition-smooth: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #1A0F13;
+  color: #F8EDEB;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   Typography Utilities
+   ============================================================ */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* ============================================================
+   VELVET Gradient Backgrounds
+   ============================================================ */
+
+.bg-velvet-gradient {
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(107, 32, 64, 0.4) 0%, rgba(13, 4, 8, 1) 60%);
+}
+
+.bg-hero-gradient {
+  background: 
+    radial-gradient(ellipse 80% 60% at 70% 50%, rgba(139, 34, 82, 0.2) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 20% 50%, rgba(74, 24, 48, 0.3) 0%, transparent 60%),
+    linear-gradient(135deg, #0d0408 0%, #1a0a10 40%, #0d0408 100%);
+}
+
+.bg-section-gradient {
+  background: linear-gradient(180deg, #0d0408 0%, #1a0a10 50%, #0d0408 100%);
+}
+
+.bg-card-glass {
+  background: rgba(42, 20, 30, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(195, 59, 114, 0.15);
+}
+
+.bg-card-glass-light {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   VELVET Button Styles
+   ============================================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+  border: none;
+  text-decoration: none;
+  background: linear-gradient(135deg, #8b2252 0%, #c23b72 50%, #8b2252 100%);
+  background-size: 200% 200%;
+  color: #fdf8f5;
+  box-shadow: 0 4px 24px rgba(194, 59, 114, 0.35), 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.btn-primary:hover {
+  background-position: right center;
+  box-shadow: 0 6px 32px rgba(194, 59, 114, 0.55), 0 2px 6px rgba(0,0,0,0.5);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  white-space: nowrap;
+  text-decoration: none;
+  background: transparent;
+  color: #e8c4d0;
+  border: 1.5px solid rgba(195, 59, 114, 0.45);
+}
+
+.btn-secondary:hover {
+  border-color: rgba(195, 59, 114, 0.8);
+  background: rgba(139, 34, 82, 0.12);
+  color: #faf0f2;
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+  background: transparent;
+  color: #c8b8c0;
+  border: none;
+}
+
+.btn-ghost:hover {
+  color: #faf0f2;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   VELVET Input Styles
+   ============================================================ */
+
+.input-velvet {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: rgba(26, 10, 16, 0.8);
+  border: 1.5px solid rgba(195, 59, 114, 0.2);
+  border-radius: 0.75rem;
+  color: #f5ede8;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: var(--transition-smooth);
+}
+
+.input-velvet::placeholder {
+  color: #7a5a65;
+}
+
+.input-velvet:focus {
+  border-color: rgba(195, 59, 114, 0.65);
+  background: rgba(26, 10, 16, 0.95);
+  box-shadow: 0 0 0 3px rgba(195, 59, 114, 0.12), 0 0 20px rgba(195, 59, 114, 0.08);
+}
+
+/* ============================================================
+   VELVET Card Styles
+   ============================================================ */
+
+.card-profile {
+  background: rgba(30, 12, 20, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(195, 59, 114, 0.12);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.card-profile:hover {
+  border-color: rgba(195, 59, 114, 0.35);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(139, 34, 82, 0.25);
+}
+
+.card-feature {
+  background: rgba(26, 10, 16, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(195, 59, 114, 0.1);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  transition: var(--transition-smooth);
+}
+
+.card-feature:hover {
+  border-color: rgba(195, 59, 114, 0.3);
+  background: rgba(42, 16, 28, 0.7);
+  box-shadow: 0 12px 40px rgba(139, 34, 82, 0.18);
+}
+
+/* ============================================================
+   Glow Effects
+   ============================================================ */
+
+.glow-rose {
+  box-shadow: 0 0 30px rgba(194, 59, 114, 0.3), 0 0 60px rgba(194, 59, 114, 0.1);
+}
+
+.glow-text {
+  text-shadow: 0 0 40px rgba(194, 59, 114, 0.5), 0 0 80px rgba(194, 59, 114, 0.2);
+}
+
+.constellation-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(194, 59, 114, 0.6);
+  box-shadow: 0 0 6px rgba(194, 59, 114, 0.8);
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0408;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 34, 82, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(194, 59, 114, 0.6);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(194, 59, 114, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(194, 59, 114, 0.6); }
+}
+
+@keyframes constellation-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: constellation-twinkle 3s ease-in-out infinite;
+}
+
+/* ============================================================
+   Section & Layout Utilities
+   ============================================================ */
+
+.section-padding {
+  padding: 5rem 0;
+}
+
+.container-velvet {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.divider-velvet {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(194, 59, 114, 0.3), transparent);
+}
+
+/* ============================================================
+   Text Gradient
+   ============================================================ */
+
+.text-gradient-velvet {
+  background: linear-gradient(135deg, #e8537f 0%, #c23b72 40%, #f4859e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #d4bca8 0%, #b89880 50%, #e8d8cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   Placeholder Page Styles
+   ============================================================ */
+
+.placeholder-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   Cinematic Rose Petal & Particle Background Keyframes
+   ============================================================ */
+
+@keyframes petalDrift {
+  0% {
+    transform: translateY(-10vh) translateX(0) rotate(0deg) rotateY(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--petal-opacity, 0.75);
+  }
+  48% {
+    transform: translateY(48vh) translateX(var(--petal-sway, 50px)) rotate(160deg) rotateY(180deg);
+  }
+  88% {
+    opacity: var(--petal-opacity, 0.75);
+  }
+  100% {
+    transform: translateY(108vh) translateX(calc(var(--petal-sway, 50px) * -0.4)) rotate(340deg) rotateY(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes particleShimmer {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.8) translateY(0);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.3) translateY(-8px);
+  }
+}
+
+@keyframes atmosphericBloom {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.12);
+  }
+}
+
+.petal-drift {
+  animation: petalDrift var(--petal-duration, 16s) ease-in-out infinite var(--petal-delay, 0s);
+  will-change: transform, opacity;
+}
+
+.particle-shimmer {
+  animation: particleShimmer var(--particle-duration, 4s) ease-in-out infinite var(--particle-delay, 0s);
+  will-change: transform, opacity;
+}
+
+.bloom-pulse {
+  animation: atmosphericBloom var(--bloom-duration, 10s) ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .petal-drift {
+    animation: none !important;
+    opacity: 0.3 !important;
+    transform: none !important;
+  }
+  .particle-shimmer {
+    animation: none !important;
+    opacity: 0.35 !important;
+    transform: none !important;
+  }
+  .bloom-pulse {
+    animation: none !important;
+    opacity: 0.4 !important;
+  }
+}
+
