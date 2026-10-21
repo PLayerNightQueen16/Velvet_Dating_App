@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, RefreshCw, Sparkles, User, AlertCircle } from "lucide-react";
-import { getChatHistory, sendMessageRest, markChatRead } from "../../services/api";
+import { ArrowLeft, RefreshCw, Sparkles, User, AlertCircle, ShieldAlert, UserX } from "lucide-react";
+import { getChatHistory, sendMessageRest, markChatRead, blockUser } from "../../services/api";
 import { getSocket } from "../../services/socket";
 import MessageBubble from "./MessageBubble";
 import MessageComposer from "./MessageComposer";
 import ChatConnectionStatus from "./ChatConnectionStatus";
+import ConfirmationModal from "../ui/ConfirmationModal";
+import ReportModal from "../ui/ReportModal";
 
 /**
  * ChatWindow
@@ -31,6 +33,9 @@ export default function ChatWindow({
   const [socketStatus, setSocketStatus] = useState(() =>
     getSocket()?.connected ? "connected" : "connecting"
   );
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -192,8 +197,16 @@ export default function ChatWindow({
       }
     };
 
+    // Listen for safety invalidation (e.g. user blocked or unmatched)
+    const handleInvalidated = ({ matchId: invId }) => {
+      if (invId === matchId) {
+        setError("This conversation is no longer active due to safety restrictions.");
+      }
+    };
+
     socket.on("chat:message", handleIncomingMessage);
     socket.on("chat:read:receipt", handleReadReceipt);
+    socket.on("chat:invalidated", handleInvalidated);
 
     return () => {
       socket.emit("chat:leave", { matchId });
@@ -202,8 +215,28 @@ export default function ChatWindow({
       socket.off("connect_error", onConnectError);
       socket.off("chat:message", handleIncomingMessage);
       socket.off("chat:read:receipt", handleReadReceipt);
+      socket.off("chat:invalidated", handleInvalidated);
     };
   }, [matchId, currentUser, onConversationUpdated]);
+
+  // ── Block User Action ────────────────────────────────────────────────────────
+  const handleBlockUser = async () => {
+    if (!partner) return;
+    try {
+      setBlocking(true);
+      await blockUser(partner.id || partner._id);
+      setShowBlockModal(false);
+      setError("You have blocked this user. This conversation has been closed.");
+      if (onConversationUpdated) {
+        onConversationUpdated(matchId, null, { isBlocked: true });
+      }
+    } catch (err) {
+      console.error("Block user error:", err);
+      alert("Failed to block user. Please try again.");
+    } finally {
+      setBlocking(false);
+    }
+  };
 
   // ── Send Message Handler (Socket with REST Fallback) ─────────────────────────
   const handleSendMessage = async ({ text }) => {
@@ -330,6 +363,30 @@ export default function ChatWindow({
             </p>
           </div>
         </div>
+
+        {/* Safety Actions: Report & Block */}
+        {partner && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowReportModal(true)}
+              title="Report user"
+              aria-label="Report user"
+              className="p-2 rounded-lg text-[#F2B6C2]/60 hover:text-[#F2B6C2] hover:bg-white/5 transition-colors"
+            >
+              <ShieldAlert size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBlockModal(true)}
+              title="Block user"
+              aria-label="Block user"
+              className="p-2 rounded-lg text-[#F2B6C2]/60 hover:text-rose-400 hover:bg-white/5 transition-colors"
+            >
+              <UserX size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Connection warning bar if disconnected */}
@@ -416,6 +473,30 @@ export default function ChatWindow({
       <MessageComposer
         onSend={handleSendMessage}
         disabled={loading || Boolean(error)}
+      />
+
+      {/* Block Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        onConfirm={handleBlockUser}
+        loading={blocking}
+        title={`Block ${partner?.name || "this user"}?`}
+        description="They will no longer be able to message you, and this conversation will be closed. This action cannot be undone."
+        confirmLabel="Block User"
+        isDestructive={true}
+      />
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetUser={partner}
+        onReportSuccess={({ alsoBlock }) => {
+          if (alsoBlock) {
+            setError("You have blocked this user. This conversation has been closed.");
+          }
+        }}
       />
     </div>
   );

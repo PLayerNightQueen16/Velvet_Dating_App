@@ -21,6 +21,7 @@ import {
   User,
   Quote,
 } from "lucide-react";
+import ReportModal from "../ui/ReportModal";
 
 /**
  * Format relationship intent for display
@@ -48,6 +49,7 @@ export default function DiscoveryProfileCard({
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [imageError, setImageError] = useState({});
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [isDraggingOut, setIsDraggingOut] = useState(false);
 
   const shouldReduceMotion = useReducedMotion();
@@ -377,11 +379,11 @@ export default function DiscoveryProfileCard({
               <p className="text-xs text-[#F2B6C2]/80 mb-5 max-w-xs">
                 They will no longer appear in your discovery and cannot interact with you.
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2 justify-center">
                 <button
                   type="button"
                   onClick={() => setShowBlockConfirm(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#F2B6C2]/20 text-[#F8EDEB] hover:bg-white/10 transition-colors"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#F2B6C2]/20 text-[#F8EDEB] hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
@@ -389,11 +391,21 @@ export default function DiscoveryProfileCard({
                   type="button"
                   onClick={() => {
                     setShowBlockConfirm(false);
+                    setShowReportModal(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-500/40 text-amber-300 hover:bg-amber-950/20 transition-colors"
+                >
+                  Report
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBlockConfirm(false);
                     onBlock?.(profile.id);
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600/80 hover:bg-red-600 text-white shadow-lg transition-colors"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-600/80 hover:bg-red-600 text-white shadow-lg transition-colors"
                 >
-                  Confirm Block
+                  Block
                 </button>
               </div>
             </motion.div>
@@ -565,6 +577,18 @@ export default function DiscoveryProfileCard({
           )}
         </button>
       </div>
+
+      {/* Confidential Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetUser={profile}
+        onReportSuccess={({ alsoBlock }) => {
+          if (alsoBlock) {
+            onBlock?.(profile.id);
+          }
+        }}
+      />
     </motion.article>
   );
 }

@@ -49,6 +49,16 @@ export async function requireAuth(req, res, next) {
       });
     }
 
+    // Invalidate session if user tokenVersion has incremented (e.g. password changed)
+    const tokenVersion = decoded.tokenVersion ?? 0;
+    const userTokenVersion = user.tokenVersion ?? 0;
+    if (userTokenVersion > 0 && tokenVersion < userTokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: "Session has expired due to password change or security update. Please log in again.",
+      });
+    }
+
     req.user = user;
     next();
   } catch (error) {

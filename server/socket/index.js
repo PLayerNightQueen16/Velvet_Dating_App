@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import * as cookie from "cookie";
+import { parseCookie } from "cookie";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { COOKIE_NAME } from "../utils/token.js";
@@ -45,7 +45,7 @@ export function initSocket(httpServer) {
   io.use(async (socket, next) => {
     try {
       const rawCookies = socket.handshake.headers?.cookie || "";
-      const parsedCookies = cookie.parse(rawCookies);
+      const parsedCookies = parseCookie(rawCookies);
       const token = parsedCookies[COOKIE_NAME] || socket.handshake.auth?.token;
 
       if (!token) {
@@ -67,6 +67,13 @@ export function initSocket(httpServer) {
       const user = await User.findById(decoded.userId).select("-password");
       if (!user) {
         return next(new Error("Account associated with session no longer exists."));
+      }
+
+      // Check tokenVersion for socket authentication
+      const tokenVersion = decoded.tokenVersion ?? 0;
+      const userTokenVersion = user.tokenVersion ?? 0;
+      if (userTokenVersion > 0 && tokenVersion < userTokenVersion) {
+        return next(new Error("Session expired due to security update. Please log in again."));
       }
 
       // Attach user to socket

@@ -195,4 +195,47 @@ export async function getUnreadCounts() {
   return response.data;
 }
 
+// ── Batch 7: Safety, Privacy, Security & Account Endpoints ───────────────────
+// Get list of blocked users
+export async function getBlockedUsers(params = {}) {
+  const response = await api.get("/blocks", { params });
+  return response.data;
+}
+
+// Submit a confidential safety report
+export async function submitReport(userId, { reason, details }) {
+  const response = await api.post(`/reports/${userId}`, { reason, details });
+  return response.data;
+}
+
+// Get privacy & discoverability settings
+export async function getPrivacySettings() {
+  const response = await api.get("/privacy");
+  return response.data;
+}
+
+// Update privacy & discoverability settings
+export async function updatePrivacySettings(settings) {
+  const response = await api.patch("/privacy", settings);
+  return response.data;
+}
+
+// Change account password
+export async function changePassword({ currentPassword, newPassword, confirmPassword }) {
+  const response = await api.patch("/auth/password", {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  });
+  return response.data;
+}
+
+// Delete account and related data permanently
+export async function deleteAccount({ password, confirmation }) {
+  const response = await api.delete("/account", {
+    data: { password, confirmation },
+  });
+  return response.data;
+}
+
 export default api;

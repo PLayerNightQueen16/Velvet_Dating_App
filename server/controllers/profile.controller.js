@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { calculateAge, validateAgeRange } from "../utils/ageValidator.js";
 import {
   uploadImageBuffer,
@@ -14,6 +17,9 @@ import {
   ALLOWED_INTERESTED_IN,
   ALLOWED_RELATIONSHIP_INTENTS,
 } from "../utils/profileConstants.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const httpsUrlRegex = /^https:\/\/.+/i;
 
@@ -288,16 +294,36 @@ export async function addPhoto(req, res) {
 
     // Case 1: Image file uploaded via Multer
     if (req.file) {
-      if (!isCloudinaryConfigured()) {
-        return res.status(503).json({
-          success: false,
-          message: "Cloudinary upload service is currently unavailable. You may add photos via image URL.",
-        });
+      let uploadedToCloud = false;
+
+      // Attempt Cloudinary upload if configured
+      if (isCloudinaryConfigured()) {
+        try {
+          const uploadResult = await uploadImageBuffer(req.file.buffer, user._id.toString());
+          photoUrl = uploadResult.url;
+          publicId = uploadResult.publicId;
+          uploadedToCloud = true;
+        } catch (cloudErr) {
+          console.warn("Cloudinary upload rejected, falling back to local media storage:", cloudErr.message);
+        }
       }
 
-      const uploadResult = await uploadImageBuffer(req.file.buffer, user._id.toString());
-      photoUrl = uploadResult.url;
-      publicId = uploadResult.publicId;
+      // If Cloudinary is unavailable or rejected (e.g. 403 read-only key), persist to local uploads
+      if (!uploadedToCloud) {
+        const uploadsDir = path.join(__dirname, "../uploads/profiles", user._id.toString());
+        await fs.promises.mkdir(uploadsDir, { recursive: true });
+
+        const ext = path.extname(req.file.originalname) || ".jpg";
+        const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
+        const filePath = path.join(uploadsDir, filename);
+
+        await fs.promises.writeFile(filePath, req.file.buffer);
+
+        const protocol = req.protocol || "http";
+        const host = req.get("host") || "localhost:8000";
+        photoUrl = `${protocol}://${host}/uploads/profiles/${user._id.toString()}/${filename}`;
+        publicId = `local:${filename}`;
+      }
     }
     // Case 2: Direct image URL provided in request body
     else if (req.body?.url) {
@@ -350,7 +376,17 @@ export async function addPhoto(req, res) {
     });
   } catch (error) {
     console.error("addPhoto error:", error);
-    return res.status(500).json({ success: false, message: error.message || "Failed to add photo." });
+    let message = error.message || "Failed to add photo.";
+    if (
+      error.http_code === 403 ||
+      String(error.message).includes("403") ||
+      String(error.message).includes("forbidden") ||
+      String(error.message).includes("missing permissions")
+    ) {
+      message =
+        "Cloudinary upload rejected (403 Forbidden): The configured API key lacks 'create/upload' permissions. Please ensure your Cloudinary Access Key has upload permissions in Cloudinary Settings > Access Keys, or add photos using the 'Add via URL' option.";
+    }
+    return res.status(500).json({ success: false, message });
   }
 }
 
@@ -417,11 +453,17 @@ export async function deletePhoto(req, res) {
 
     await user.save();
 
-    // Asynchronously destroy Cloudinary asset if publicId exists
+    // Asynchronously destroy asset (Cloudinary or local)
     if (publicIdToDelete) {
-      deleteCloudinaryImage(publicIdToDelete).catch((err) =>
-        console.warn("Async Cloudinary deletion error:", err)
-      );
+      if (publicIdToDelete.startsWith("local:")) {
+        const filename = publicIdToDelete.replace("local:", "");
+        const filePath = path.join(__dirname, "../uploads/profiles", user._id.toString(), filename);
+        fs.promises.unlink(filePath).catch(() => {});
+      } else {
+        deleteCloudinaryImage(publicIdToDelete).catch((err) =>
+          console.warn("Async Cloudinary deletion error:", err)
+        );
+      }
     }
 
     return res.status(200).json({

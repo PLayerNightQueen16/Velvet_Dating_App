@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import {
   User, Calendar, MapPin, Sparkles, Heart, Camera, ChevronRight,
   ChevronLeft, CheckCircle, X, Plus, Trash2, Star, Upload, AlertCircle,
-  Loader2, Info,
+  Loader2, Info, Link2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import {
-  getProfile, saveOnboarding, completeProfile, uploadPhoto, deletePhoto, setPrimaryPhoto,
+  getProfile, saveOnboarding, completeProfile, uploadPhoto, addPhotoUrl, deletePhoto, setPrimaryPhoto,
 } from "../services/api";
 
 /* ===================== Constants (mirrors server) ===================== */
@@ -422,6 +422,29 @@ export default function ProfileOnboarding() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }, [photos.length]);
+
+  const handleAddPhotoByUrl = useCallback(async (targetUrl) => {
+    const url = String(targetUrl || "").trim();
+    if (!url || !url.startsWith("https://")) {
+      setError("Please provide a valid secure photo URL starting with https://");
+      return;
+    }
+    if (photos.length >= MAX_PHOTOS) {
+      setError(`You can add at most ${MAX_PHOTOS} photos.`);
+      return;
+    }
+    setUploading(true);
+    setError("");
+    setFieldErrors(prev => ({ ...prev, photos: undefined }));
+    try {
+      const res = await addPhotoUrl(url);
+      setPhotos(res.photos);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add photo URL.");
+    } finally {
+      setUploading(false);
     }
   }, [photos.length]);
 
@@ -845,6 +868,35 @@ export default function ProfileOnboarding() {
               </p>
             )}
 
+            {/* Quick Portrait Presets and URL Fallback */}
+            <div className="p-3.5 rounded-xl border border-[#F2B6C2]/15 bg-[#1A0F13]/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#D4AF97] uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-[#F2B6C2]" /> Quick Add Velvet Portraits (1-Click)
+                </span>
+                <span className="text-[10px] text-[#F2B6C2]/50">Or upload your own files</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { label: "Classic Velvet", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1000&q=80" },
+                  { label: "Golden Hour", url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1000&q=80" },
+                  { label: "Sunset Glow", url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=80" },
+                  { label: "Noir Elegance", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1000&q=80" },
+                ].map(p => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    disabled={photos.length >= MAX_PHOTOS || uploading}
+                    onClick={() => handleAddPhotoByUrl(p.url)}
+                    className="p-1.5 rounded-lg border border-[#F2B6C2]/20 bg-[#1A0F13]/70 hover:bg-[#8B1E3F]/30 hover:border-[#F2B6C2]/40 text-left transition-all flex items-center gap-2 group disabled:opacity-50"
+                  >
+                    <img src={p.url} alt={p.label} className="w-7 h-7 rounded-md object-cover shrink-0" />
+                    <span className="text-[10px] font-medium text-[#F8EDEB] group-hover:text-[#F2B6C2] truncate">{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Upload info */}
             <div
               className="p-3 rounded-xl text-xs text-[#F2B6C2]/60 border flex items-start gap-2"
@@ -852,8 +904,7 @@ export default function ProfileOnboarding() {
             >
               <Upload size={13} className="shrink-0 mt-0.5 text-[#D4AF97]" />
               <span>
-                Photos are securely uploaded to Cloudinary. Accepted formats: JPEG, PNG, WebP (max 10MB each).
-                The first photo is automatically set as your primary. Hover any photo to set as primary or remove.
+                Upload your files (JPEG, PNG, WebP) or click any preset portrait above. The first photo is automatically set as your primary.
               </span>
             </div>
           </div>

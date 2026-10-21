@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, Settings as SettingsIcon } from "lucide-react";
 import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
 import { getUnreadCounts } from "../../services/api";
@@ -145,34 +145,49 @@ export default function Navbar() {
           </ul>
 
           {/* Desktop CTA / Auth state */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {user ? (
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/app"
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border border-[#F2B6C2]/20 bg-[#3A0D1A]/50 text-[#F8EDEB] hover:bg-[#3A0D1A] transition-colors"
-                >
-                  <User size={14} className="text-[#F2B6C2]" />
-                  <span>{user.name.split(" ")[0]}</span>
-                </Link>
-                <Link
+              <div className="flex items-center gap-2">
+                <NavLink
                   to="/profile/edit"
                   id="nav-edit-profile"
-                  className="btn-ghost text-sm flex items-center gap-1.5"
-                  style={{ color: "#F2B6C2" }}
-                  aria-label="Edit profile"
+                  className={({ isActive }) =>
+                    `inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#8B1E3F]/40 border-[#F2B6C2]/40 text-[#FDE7E9] shadow-sm"
+                        : "bg-[#3A0D1A]/40 border-[#F2B6C2]/15 text-[#F8EDEB] hover:bg-[#3A0D1A]/80 hover:border-[#F2B6C2]/30"
+                    }`
+                  }
+                  aria-label="Edit your profile"
                 >
-                  Edit Profile
-                </Link>
+                  <User size={13} className="text-[#F2B6C2]" />
+                  <span>{user.name?.split(" ")[0] || "Profile"}</span>
+                </NavLink>
+
+                <NavLink
+                  to="/settings"
+                  id="nav-settings"
+                  className={({ isActive }) =>
+                    `inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-medium border transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#8B1E3F]/40 border-[#F2B6C2]/40 text-[#FDE7E9] shadow-sm"
+                        : "bg-transparent border-transparent text-[#F2B6C2] hover:bg-[#3A0D1A]/50 hover:border-[#F2B6C2]/20"
+                    }`
+                  }
+                  aria-label="Settings & Safety"
+                >
+                  <SettingsIcon size={14} className="text-[#F2B6C2]" />
+                  <span>Settings</span>
+                </NavLink>
+
                 <button
                   onClick={handleLogout}
                   id="nav-logout"
-                  className="btn-ghost text-sm flex items-center gap-1.5"
-                  style={{ color: "#F2B6C2" }}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-medium text-[#F2B6C2]/80 hover:text-[#F8EDEB] hover:bg-[#8B1E3F]/20 border border-transparent hover:border-[#F2B6C2]/20 transition-all duration-200"
                   aria-label="Sign out"
                 >
-                  <LogOut size={14} />
-                  Sign Out
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
                 </button>
               </div>
             ) : (
@@ -275,6 +290,15 @@ export default function Navbar() {
                     className="block py-3 px-4 rounded-xl text-base font-medium text-[#F2B6C2]"
                   >
                     Edit Profile
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/settings"
+                    id="mobile-nav-settings"
+                    className="py-3 px-4 rounded-xl text-base font-medium text-[#F2B6C2] flex items-center gap-2 hover:bg-[#3A0D1A]/50 transition-colors"
+                  >
+                    <SettingsIcon size={16} /> Settings & Safety
                   </Link>
                 </li>
                 <li>
