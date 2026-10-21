@@ -3,19 +3,58 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut } from "lucide-react";
 import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
+import { getUnreadCounts } from "../../services/api";
+import { getSocket } from "../../services/socket";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    // Fetch initial unread count
+    getUnreadCounts()
+      .then((res) => {
+        if (isMounted && res?.success && typeof res.data?.totalUnread === "number") {
+          setUnreadCount(res.data.totalUnread);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch unread counts for navbar:", err.message);
+      });
+
+    // Listen to real-time unread updates via Socket.IO
+    const socket = getSocket();
+    const handleUnreadUpdate = (payload) => {
+      if (typeof payload?.totalUnread === "number") {
+        setUnreadCount(payload.totalUnread);
+      }
+    };
+
+    socket.on("chat:unread:update", handleUnreadUpdate);
+
+    return () => {
+      isMounted = false;
+      socket.off("chat:unread:update", handleUnreadUpdate);
+    };
+  }, [user, location.pathname]);
 
   const activeLinks = user
     ? [
         { label: "Discover", to: "/discover" },
         { label: "Likes", to: "/likes" },
         { label: "Matches", to: "/matches" },
+        { label: "Chat", to: "/chat", badge: unreadCount },
       ]
     : [
         { label: "Discover", to: "/discover" },
@@ -84,13 +123,21 @@ export default function Navbar() {
                   <NavLink
                     to={link.to}
                     className={({ isActive }) =>
-                      `btn-ghost text-sm font-medium ${isActive ? "text-white" : ""}`
+                      `btn-ghost text-sm font-medium inline-flex items-center gap-1.5 ${isActive ? "text-white" : ""}`
                     }
                     style={({ isActive }) => ({
                       color: isActive ? "#FDE7E9" : "#F2B6C2",
                     })}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
+                    {Boolean(link.badge && link.badge > 0) && (
+                      <span
+                        data-testid="navbar-unread-badge"
+                        className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-[#8B1E3F] text-[#FDE7E9] border border-[#F2B6C2]/40 shadow-sm min-w-[18px]"
+                      >
+                        {link.badge > 99 ? "99+" : link.badge}
+                      </span>
+                    )}
                   </NavLink>
                 )}
               </li>
@@ -195,10 +242,18 @@ export default function Navbar() {
                 ) : (
                   <NavLink
                     to={link.to}
-                    className="block py-3 px-4 rounded-xl text-base font-medium transition-all duration-200"
+                    className="flex items-center justify-between py-3 px-4 rounded-xl text-base font-medium transition-all duration-200"
                     style={{ color: "#F2B6C2" }}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
+                    {Boolean(link.badge && link.badge > 0) && (
+                      <span
+                        data-testid="navbar-unread-badge-mobile"
+                        className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-[#8B1E3F] text-[#FDE7E9] border border-[#F2B6C2]/40 shadow-sm"
+                      >
+                        {link.badge > 99 ? "99+" : link.badge}
+                      </span>
+                    )}
                   </NavLink>
                 )}
               </li>

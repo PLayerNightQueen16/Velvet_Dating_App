@@ -1,3 +1,4 @@
+import http from "http";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -8,6 +9,8 @@ import profileRoutes from "./routes/profile.routes.js";
 import discoveryRoutes from "./routes/discovery.routes.js";
 import likesRoutes from "./routes/likes.routes.js";
 import matchesRoutes from "./routes/matches.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import { initSocket } from "./socket/index.js";
 
 // Load environment variables
 dotenv.config();
@@ -62,6 +65,11 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/discovery", discoveryRoutes);
 app.use("/api/likes", likesRoutes);
 app.use("/api/matches", matchesRoutes);
+app.use("/api/chat", chatRoutes);
+
+// Create HTTP server and initialize Socket.IO
+const httpServer = http.createServer(app);
+const io = initSocket(httpServer);
 
 // Handle unknown routes (404)
 app.use((req, res) => {
@@ -102,10 +110,11 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`🌹 VELVET API Server listening on http://localhost:${PORT}`);
       console.log(`🔒 Authentication active with HTTP-only cookies`);
       console.log(`🌐 Accepting client origin: ${CLIENT_URL}`);
+      console.log(`⚡ Socket.IO real-time messaging initialized`);
     });
   } catch (error) {
     console.error("❌ Failed to start VELVET server due to database failure:", error.message);
@@ -115,4 +124,5 @@ async function startServer() {
 
 startServer();
 
+export { app, httpServer, io };
 export default app;

@@ -1,5 +1,6 @@
 import React from "react";
-import { UserX, Calendar, MapPin, Eye, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { UserX, Calendar, MapPin, Eye, Sparkles, MessageCircle } from "lucide-react";
 
 /**
  * MatchCard
@@ -97,29 +98,40 @@ export default function MatchCard({ match, onUnmatch, onViewProfile }) {
           </div>
         )}
 
-        {/* Actions: View Profile & Unmatch */}
-        <div className="mt-auto pt-3 border-t border-[rgba(242,182,194,0.1)] flex items-center gap-2">
-          {onViewProfile && (
+        {/* Actions: Chat, View Profile & Unmatch */}
+        <div className="mt-auto pt-3 border-t border-[rgba(242,182,194,0.1)] flex flex-col gap-2">
+          <Link
+            to={`/chat/${matchId}`}
+            aria-label={`Chat with ${partner?.name}`}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#8B1E3F] to-[#3A0D1A] hover:from-[#A2264B] hover:to-[#4A1122] text-[#F8EDEB] border border-[#F2B6C2]/30 shadow-md transition-all hover:shadow-[#8B1E3F]/30"
+          >
+            <MessageCircle size={14} className="text-[#F2B6C2]" />
+            <span>Chat</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {onViewProfile && (
+              <button
+                type="button"
+                onClick={() => onViewProfile(partner)}
+                aria-label={`View ${partner?.name}'s profile`}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium border border-[#F2B6C2]/20 hover:border-[#F2B6C2]/40 bg-white/5 hover:bg-white/10 text-[#F8EDEB] transition-colors"
+              >
+                <Eye size={14} className="text-[#F2B6C2]" />
+                <span>Profile</span>
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => onViewProfile(partner)}
-              aria-label={`View ${partner?.name}'s profile`}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium border border-[#F2B6C2]/20 hover:border-[#F2B6C2]/40 bg-white/5 hover:bg-white/10 text-[#F8EDEB] transition-colors"
+              onClick={() => onUnmatch && onUnmatch(match)}
+              aria-label={`Unmatch ${partner?.name}`}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium border border-rose-900/40 hover:border-rose-700/60 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 transition-colors"
             >
-              <Eye size={14} className="text-[#F2B6C2]" />
-              <span>Profile</span>
+              <UserX size={14} />
+              <span>Unmatch</span>
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => onUnmatch && onUnmatch(match)}
-            aria-label={`Unmatch ${partner?.name}`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium border border-rose-900/40 hover:border-rose-700/60 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 transition-colors"
-          >
-            <UserX size={14} />
-            <span>Unmatch</span>
-          </button>
+          </div>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import ProfileEdit from "./pages/ProfileEdit";
 import Discovery from "./pages/Discovery";
 import LikesPage from "./pages/LikesPage";
 import MatchesPage from "./pages/MatchesPage";
+import Chat from "./pages/Chat";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AnimatedRoseBackground from "./components/ui/AnimatedRoseBackground";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -33,25 +34,6 @@ function SmartRedirect() {
    Route placeholder definitions (future batches)
    ============================================================ */
 const placeholderRoutes = [
-  {
-    path: "/chat",
-    props: {
-      title: "Messages",
-      description: "Private conversations with your matches — intimate and secure.",
-      icon: "💬",
-      backLabel: "Back Home",
-    },
-  },
-  {
-    path: "/chat/:matchId",
-    props: {
-      title: "Conversation",
-      description: "Your private conversation with your match.",
-      icon: "💬",
-      backTo: "/chat",
-      backLabel: "Back to Messages",
-    },
-  },
   {
     path: "/settings",
     props: {
@@ -169,6 +151,24 @@ function AppInner() {
               element={
                 <ProtectedRoute>
                   <MatchesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: chat conversations & direct message thread */}
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat/:matchId"
+              element={
+                <ProtectedRoute>
+                  <Chat />
                 </ProtectedRoute>
               }
             />
