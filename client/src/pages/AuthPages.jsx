@@ -134,12 +134,19 @@ export function LoginPage() {
 
     try {
       setSubmitting(true);
-      await login({
+      const loggedInUser = await login({
         emailOrUsername: emailOrUsername.trim(),
         password,
       });
-      const destination = location.state?.from?.pathname || "/app";
-      navigate(destination, { replace: true });
+      // Smart redirect: incomplete profile goes to onboarding
+      const intendedPath = location.state?.from?.pathname;
+      if (intendedPath && intendedPath !== "/login" && intendedPath !== "/register") {
+        navigate(intendedPath, { replace: true });
+      } else if (loggedInUser?.profileCompleted === false) {
+        navigate("/onboarding", { replace: true });
+      } else {
+        navigate("/app", { replace: true });
+      }
     } catch (err) {
       setLocalError(err.message || "Invalid credentials. Please try again.");
     } finally {
@@ -315,8 +322,8 @@ export function RegisterPage() {
         email: email.trim().toLowerCase(),
         password,
       });
-      const destination = location.state?.from?.pathname || "/app";
-      navigate(destination, { replace: true });
+      // New users always need to complete profile onboarding
+      navigate("/onboarding", { replace: true });
     } catch (err) {
       setLocalError(err.message || "Failed to create account. Please try again.");
     } finally {

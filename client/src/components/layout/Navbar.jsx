@@ -4,17 +4,23 @@ import { Menu, X, User, LogOut } from "lucide-react";
 import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
 
-const navLinks = [
-  { label: "Discover", to: "/discover" },
-  { label: "How It Works", to: "/#how-it-works" },
-];
-
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const activeLinks = user
+    ? [
+        { label: "Discover", to: "/discover" },
+        { label: "Likes", to: "/likes" },
+        { label: "Matches", to: "/matches" },
+      ]
+    : [
+        { label: "Discover", to: "/discover" },
+        { label: "How It Works", to: "/#how-it-works" },
+      ];
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -64,7 +70,7 @@ export default function Navbar() {
             className="hidden md:flex items-center gap-1 list-none m-0 p-0"
             role="list"
           >
-            {navLinks.map((link) => (
+            {activeLinks.map((link) => (
               <li key={link.to}>
                 {link.to.startsWith("/#") ? (
                   <a
@@ -101,6 +107,15 @@ export default function Navbar() {
                 >
                   <User size={14} className="text-[#F2B6C2]" />
                   <span>{user.name.split(" ")[0]}</span>
+                </Link>
+                <Link
+                  to="/profile/edit"
+                  id="nav-edit-profile"
+                  className="btn-ghost text-sm flex items-center gap-1.5"
+                  style={{ color: "#F2B6C2" }}
+                  aria-label="Edit profile"
+                >
+                  Edit Profile
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -166,7 +181,7 @@ export default function Navbar() {
             className="container-velvet py-4 flex flex-col gap-1 list-none m-0"
             role="list"
           >
-            {navLinks.map((link) => (
+            {activeLinks.map((link) => (
               <li key={link.to}>
                 {link.to.startsWith("/#") ? (
                   <a
@@ -196,6 +211,15 @@ export default function Navbar() {
                     className="block py-3 px-4 rounded-xl text-base font-medium text-[#F8EDEB]"
                   >
                     Account ({user.name})
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/profile/edit"
+                    id="mobile-nav-edit-profile"
+                    className="block py-3 px-4 rounded-xl text-base font-medium text-[#F2B6C2]"
+                  >
+                    Edit Profile
                   </Link>
                 </li>
                 <li>
