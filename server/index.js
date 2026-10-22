@@ -26,11 +26,20 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const isProduction = process.env.NODE_ENV === "production";
 
-// Enable trust proxy for Render, Heroku, and reverse proxies
+// Validate CLIENT_URL in production
+if (isProduction && !process.env.CLIENT_URL) {
+  console.warn(
+    "⚠️  WARNING: CLIENT_URL is not set in production! Defaulting to http://localhost:5173. Requests from your deployed frontend will be blocked by CORS until CLIENT_URL is configured in Render."
+  );
+}
+
+// Enable trust proxy for Render, Heroku, and reverse proxies (essential for secure cookies)
 app.set("trust proxy", 1);
 
-const configuredClients = (process.env.CLIENT_URL || "http://localhost:5173")
+const configuredClients = CLIENT_URL
   .split(",")
   .map((u) => u.trim())
   .filter(Boolean);
@@ -43,6 +52,7 @@ const allowedOrigins = [
 ];
 
 const isOriginAllowed = (origin) => {
+  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, Render health checks)
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
   if (origin.endsWith(".vercel.app")) return true;
@@ -141,10 +151,12 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     await connectDB();
-    httpServer.listen(PORT, () => {
-      console.log(`🌹 VELVET API Server listening on http://localhost:${PORT}`);
-      console.log(`🔒 Authentication active with HTTP-only cookies`);
-      console.log(`🌐 Accepting client origin: ${CLIENT_URL}`);
+    const HOST = "0.0.0.0";
+    httpServer.listen(PORT, HOST, () => {
+      const displayUrl = isProduction ? `port ${PORT} (binding 0.0.0.0)` : `http://localhost:${PORT}`;
+      console.log(`🌹 VELVET API Server listening on ${displayUrl}`);
+      console.log(`🔒 Authentication active with HTTP-only cookies (${isProduction ? "production/secure" : "development/lax"})`);
+      console.log(`🌐 Accepting client origin(s): ${configuredClients.join(", ")}`);
       console.log(`⚡ Socket.IO real-time messaging initialized`);
     });
   } catch (error) {
@@ -155,5 +167,5 @@ async function startServer() {
 
 startServer();
 
-export { app, httpServer, io };
+export { app, httpServer, io, isOriginAllowed, allowedOrigins, CLIENT_URL };
 export default app;
