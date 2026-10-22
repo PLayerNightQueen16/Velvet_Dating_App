@@ -203,7 +203,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="container-velvet pt-24 pb-16 w-full">
+        <div className="container-velvet pt-36 pb-20 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left — copy */}
             <div className="flex flex-col gap-7">

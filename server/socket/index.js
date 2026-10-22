@@ -19,17 +19,29 @@ let ioInstance = null;
  * @returns {Server}
  */
 export function initSocket(httpServer) {
-  const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+  const configuredClients = (process.env.CLIENT_URL || "http://localhost:5173")
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean);
+
   const allowedOrigins = [
-    CLIENT_URL,
+    ...configuredClients,
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:3000",
   ];
+
+  const isOriginAllowed = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (origin.endsWith(".vercel.app")) return true;
+    return false;
+  };
 
   const io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (isOriginAllowed(origin)) {
           return callback(null, true);
         }
         return callback(new Error(`CORS blocked socket request from origin: ${origin}`));

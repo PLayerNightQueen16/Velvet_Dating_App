@@ -26,23 +26,34 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+
+// Enable trust proxy for Render, Heroku, and reverse proxies
+app.set("trust proxy", 1);
+
+const configuredClients = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  ...configuredClients,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+];
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (origin.endsWith(".vercel.app")) return true;
+  return false;
+};
 
 // Configure CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-
-      // Check against configured CLIENT_URL or localhost origins in dev
-      const allowedOrigins = [
-        CLIENT_URL,
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-      ];
-
-      if (allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked request from origin: ${origin}`));
@@ -61,15 +72,19 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 // Serve local uploads folder statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Health check endpoint
-app.get("/health", (req, res) => {
+// Health check endpoints (both /health and /api/health for Render/Vercel)
+const healthHandler = (req, res) => {
   res.status(200).json({
     status: "ok",
     service: "VELVET Dating App API",
     tagline: "I once believed love would be burning red...then you turned my world crimson instead",
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
   });
-});
+};
+app.get("/health", healthHandler);
+app.get("/api/health", healthHandler);
 
 // Mount API routes
 app.use("/api/auth", authRoutes);

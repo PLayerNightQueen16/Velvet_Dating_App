@@ -98,11 +98,11 @@ export default function Navbar() {
         }}
       >
         <nav
-          className="container-velvet flex items-center justify-between h-20"
+          className="container-velvet flex items-center justify-between h-[5.5rem]"
           aria-label="Main navigation"
         >
           {/* Logo */}
-          <Logo size="md" />
+          <Logo size="lg" />
 
           {/* Desktop nav */}
           <ul
