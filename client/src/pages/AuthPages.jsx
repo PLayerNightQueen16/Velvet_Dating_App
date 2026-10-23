@@ -161,7 +161,7 @@ export function LoginPage() {
       error={localError}
     >
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-5"
         onSubmit={handleSubmit}
         aria-label="Login form"
         noValidate
@@ -338,7 +338,7 @@ export function RegisterPage() {
       error={localError}
     >
       <form
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-5"
         onSubmit={handleSubmit}
         aria-label="Registration form"
         noValidate

@@ -36,6 +36,7 @@ export default function ChatWindow({
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [partnerImgError, setPartnerImgError] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -319,10 +320,11 @@ export default function ChatWindow({
     }
   };
 
-  const partnerPhoto =
+  const rawPartnerPhoto =
     partner?.photos?.find((p) => p.isPrimary)?.url ||
     partner?.photos?.[0]?.url ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
+    null;
+  const partnerPhoto = partnerImgError ? null : rawPartnerPhoto;
 
   return (
     <div className="flex flex-col h-full bg-[#1A0F13] relative overflow-hidden">
@@ -341,12 +343,24 @@ export default function ChatWindow({
           )}
 
           {/* Partner Photo & Details */}
-          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#F2B6C2]/20 bg-[#2D121B]">
-            <img
-              src={partnerPhoto}
-              alt={partner?.name || "Partner"}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#F2B6C2]/20 bg-[#2D121B] shrink-0">
+            {partnerPhoto ? (
+              <img
+                src={partnerPhoto}
+                alt={partner?.name || "Partner"}
+                className="w-full h-full object-cover"
+                onError={() => setPartnerImgError(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, #8B1E3F 0%, #3A0D1A 100%)" }}
+              >
+                <span className="text-sm font-bold" style={{ color: "#F2B6C2" }}>
+                  {(partner?.name || "?")[0].toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
 
           <div>
