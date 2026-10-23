@@ -21,7 +21,7 @@ let ioInstance = null;
 export function initSocket(httpServer) {
   const configuredClients = (process.env.CLIENT_URL || "http://localhost:5173")
     .split(",")
-    .map((u) => u.trim())
+    .map((u) => u.trim().replace(/\/+$/, ""))
     .filter(Boolean);
 
   const allowedOrigins = [
@@ -33,8 +33,9 @@ export function initSocket(httpServer) {
 
   const isOriginAllowed = (origin) => {
     if (!origin) return true;
-    if (allowedOrigins.includes(origin)) return true;
-    if (origin.endsWith(".vercel.app")) return true;
+    const cleanOrigin = origin.trim().replace(/\/+$/, "");
+    if (allowedOrigins.includes(cleanOrigin)) return true;
+    if (cleanOrigin.endsWith(".vercel.app")) return true;
     return false;
   };
 

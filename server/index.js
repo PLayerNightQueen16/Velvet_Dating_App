@@ -41,7 +41,7 @@ app.set("trust proxy", 1);
 
 const configuredClients = CLIENT_URL
   .split(",")
-  .map((u) => u.trim())
+  .map((u) => u.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 
 const allowedOrigins = [
@@ -54,8 +54,9 @@ const allowedOrigins = [
 const isOriginAllowed = (origin) => {
   // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, Render health checks)
   if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  if (origin.endsWith(".vercel.app")) return true;
+  const cleanOrigin = origin.trim().replace(/\/+$/, "");
+  if (allowedOrigins.includes(cleanOrigin)) return true;
+  if (cleanOrigin.endsWith(".vercel.app")) return true;
   return false;
 };
 
@@ -96,17 +97,23 @@ const healthHandler = (req, res) => {
 app.get("/health", healthHandler);
 app.get("/api/health", healthHandler);
 
-// Mount API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/discovery", discoveryRoutes);
-app.use("/api/likes", likesRoutes);
-app.use("/api/matches", matchesRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/blocks", blocksRoutes);
-app.use("/api/reports", reportsRoutes);
-app.use("/api/privacy", privacyRoutes);
-app.use("/api/account", accountRoutes);
+// Mount API routes with dual prefix: both /api/<path> and /<path> for client URL robustness
+const routeModules = [
+  { path: "auth", router: authRoutes },
+  { path: "profile", router: profileRoutes },
+  { path: "discovery", router: discoveryRoutes },
+  { path: "likes", router: likesRoutes },
+  { path: "matches", router: matchesRoutes },
+  { path: "chat", router: chatRoutes },
+  { path: "blocks", router: blocksRoutes },
+  { path: "reports", router: reportsRoutes },
+  { path: "privacy", router: privacyRoutes },
+  { path: "account", router: accountRoutes },
+];
+
+for (const { path: routePath, router } of routeModules) {
+  app.use([`/api/${routePath}`, `/${routePath}`], router);
+}
 
 // Create HTTP server and initialize Socket.IO
 const httpServer = http.createServer(app);
