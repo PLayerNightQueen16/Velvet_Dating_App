@@ -53,10 +53,10 @@ export async function deleteAccount(req, res) {
 
     const userId = userWithPassword._id;
 
-    // 1. Identify and delete stored Cloudinary assets
+    // 1. Identify and delete stored Cloudinary assets (ignoring legacy local IDs)
     const publicIds = (userWithPassword.photos || [])
       .map((p) => p.publicId)
-      .filter(Boolean);
+      .filter((pid) => pid && !pid.startsWith("local:"));
 
     for (const pid of publicIds) {
       try {

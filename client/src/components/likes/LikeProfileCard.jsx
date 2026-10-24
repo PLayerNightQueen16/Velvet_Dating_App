@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Heart, X, Undo2, MapPin, Sparkles } from "lucide-react";
 
 /**
@@ -21,10 +21,13 @@ export default function LikeProfileCard({
   onWithdraw,
   actionLoading = false,
 }) {
-  const photoUrl =
-    profile.photos?.find((p) => p.isPrimary)?.url ||
-    profile.photos?.[0]?.url ||
+  const [imgError, setImgError] = useState(false);
+  const fallbackUrl =
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80";
+  const primaryUrl =
+    profile.photos?.find((p) => p.isPrimary)?.url ||
+    profile.photos?.[0]?.url;
+  const photoUrl = !imgError && primaryUrl ? primaryUrl : fallbackUrl;
 
   const formattedDate = profile.likedAt
     ? new Date(profile.likedAt).toLocaleDateString(undefined, {
@@ -45,6 +48,7 @@ export default function LikeProfileCard({
           alt={profile.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          onError={() => setImgError(true)}
         />
 
         {/* Gradient Overlay for Text Legibility */}

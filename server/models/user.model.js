@@ -33,6 +33,10 @@ const photoSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    requiresReupload: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: true, timestamps: true }
 );
@@ -366,6 +370,7 @@ userSchema.methods.toSafeProfile = function (isOwner = false) {
       url: p.url,
       publicId: isOwner ? p.publicId : undefined,
       isPrimary: p.isPrimary,
+      requiresReupload: Boolean(p.requiresReupload),
     })),
     preferences: isOwner ? this.preferences : undefined,
     privacy: isOwner
@@ -413,6 +418,7 @@ userSchema.methods.toDiscoveryProfile = function () {
       id: p._id,
       url: p.url,
       isPrimary: p.isPrimary,
+      requiresReupload: Boolean(p.requiresReupload),
     })),
   };
 };

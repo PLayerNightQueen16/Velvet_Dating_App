@@ -33,6 +33,31 @@ const upload = multer({
   },
 });
 
+// Safe Multer error-handling middleware wrapper
+const uploadPhotoMiddleware = (req, res, next) => {
+  upload.single("photo")(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "Photo file size exceeds the 10MB limit. Please upload a smaller image.",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: `File upload error: ${err.message}`,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Invalid file uploaded.",
+      });
+    }
+    next();
+  });
+};
+
 // All profile routes require authentication
 router.use(requireAuth);
 
@@ -53,8 +78,8 @@ router.post("/me/complete", completeProfile);
 // GET /api/profile/me/photos/upload-signature → Server-signed Cloudinary params
 router.get("/me/photos/upload-signature", getUploadSignature);
 
-// POST /api/profile/me/photos  → Add photo (file upload via multer, or URL in body)
-router.post("/me/photos", upload.single("photo"), addPhoto);
+// POST /api/profile/me/photos  → Add photo (file upload via Cloudinary, or URL in body)
+router.post("/me/photos", uploadPhotoMiddleware, addPhoto);
 
 // PATCH /api/profile/me/photos/:photoId/primary → Set photo as primary
 router.patch("/me/photos/:photoId/primary", setPrimaryPhoto);

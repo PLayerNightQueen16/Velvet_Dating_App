@@ -16,6 +16,7 @@ import blocksRoutes from "./routes/blocks.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
 import privacyRoutes from "./routes/privacy.routes.js";
 import accountRoutes from "./routes/account.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { initSocket } from "./socket/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,6 +110,7 @@ const routeModules = [
   { path: "reports", router: reportsRoutes },
   { path: "privacy", router: privacyRoutes },
   { path: "account", router: accountRoutes },
+  { path: "admin", router: adminRoutes },
 ];
 
 for (const { path: routePath, router } of routeModules) {

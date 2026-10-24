@@ -121,6 +121,8 @@ function validateAge(dob) {
 
 /* ===================== Photo slot helpers ===================== */
 function PhotoSlot({ photo, index, onSetPrimary, onDelete, isPrimary }) {
+  const [imgError, setImgError] = useState(false);
+  const isUnavailable = imgError || Boolean(photo.requiresReupload);
   return (
     <div
       className="relative group aspect-[3/4] rounded-2xl overflow-hidden border"
@@ -129,21 +131,27 @@ function PhotoSlot({ photo, index, onSetPrimary, onDelete, isPrimary }) {
         background: "rgba(26,15,19,0.5)",
       }}
     >
-      <img
-        src={photo.url}
-        alt={`Profile photo ${index + 1}`}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
+      {!isUnavailable ? (
+        <img
+          src={photo.url}
+          alt={`Profile photo ${index + 1}`}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-3 text-center bg-[#1A0F13]">
+          <AlertCircle size={20} className="text-amber-400/80 mb-1" />
+          <span className="text-[10px] font-medium text-[#F8EDEB]">Unavailable</span>
+          <span className="text-[9px] text-[#F2B6C2]/60">Remove & re-add</span>
+        </div>
+      )}
       {isPrimary && (
-        <div className="absolute top-2 left-2 bg-[#D4AF97] text-[#1A0F13] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+        <div className="absolute top-2 left-2 bg-[#D4AF97] text-[#1A0F13] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
           <Star size={9} /> Primary
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 gap-2">
-        {!isPrimary && (
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 gap-2 z-20">
+        {!isPrimary && !isUnavailable && (
           <button
             type="button"
             onClick={() => onSetPrimary(photo._id || photo.id)}

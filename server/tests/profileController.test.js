@@ -1,12 +1,15 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   getProfile,
   updateProfile,
   completeProfile,
   getUploadSignature,
+  addPhoto,
+  setPrimaryPhoto,
   deletePhoto,
 } from "../controllers/profile.controller.js";
-import { isCloudinaryConfigured, generateUploadSignature } from "../utils/cloudinary.js";
+import * as cloudinaryUtils from "../utils/cloudinary.js";
+const { isCloudinaryConfigured, generateUploadSignature } = cloudinaryUtils;
 
 describe("Profile Controller Unit Tests", () => {
   it("getProfile rejects unauthenticated requests (req.user missing)", async () => {
@@ -227,5 +230,333 @@ describe("Cloudinary Upload Signature & Integration", () => {
         })
       );
     }
+  });
+});
+
+describe("Photo Upload Controller (Cloudinary Integration)", () => {
+  it("enforces maximum 5 photos limit", async () => {
+    const mockUser = {
+      photos: [
+        { _id: "1", url: "https://res.cloudinary.com/demo/image/upload/p1.jpg" },
+        { _id: "2", url: "https://res.cloudinary.com/demo/image/upload/p2.jpg" },
+        { _id: "3", url: "https://res.cloudinary.com/demo/image/upload/p3.jpg" },
+        { _id: "4", url: "https://res.cloudinary.com/demo/image/upload/p4.jpg" },
+        { _id: "5", url: "https://res.cloudinary.com/demo/image/upload/p5.jpg" },
+      ],
+      save: vi.fn(),
+    };
+
+    const req = {
+      user: mockUser,
+      file: { buffer: Buffer.from("fake-image"), originalname: "test.jpg" },
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: expect.stringContaining("maximum limit of 5 photos"),
+      })
+    );
+    expect(mockUser.save).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 if Cloudinary is not configured and does NOT create a local record", async () => {
+    vi.spyOn(cloudinaryUtils, "isCloudinaryConfigured").mockReturnValue(false);
+
+    const mockUser = {
+      _id: "user_123",
+      photos: [],
+      save: vi.fn(),
+    };
+    const req = {
+      user: mockUser,
+      file: { buffer: Buffer.from("image-bytes"), originalname: "pic.jpg" },
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: expect.stringContaining("Cloudinary"),
+      })
+    );
+    // CRITICAL: Must not silently fall back to local disk or push into user.photos
+    expect(mockUser.photos).toHaveLength(0);
+    expect(mockUser.save).not.toHaveBeenCalled();
+  });
+
+  it("handles Cloudinary upload failure gracefully without saving broken database record", async () => {
+    vi.spyOn(cloudinaryUtils, "isCloudinaryConfigured").mockReturnValue(true);
+    vi.spyOn(cloudinaryUtils, "uploadImageBuffer").mockRejectedValue(new Error("Cloudinary network timeout"));
+
+    const mockUser = {
+      _id: "user_123",
+      photos: [],
+      save: vi.fn(),
+    };
+    const req = {
+      user: mockUser,
+      file: { buffer: Buffer.from("image-bytes"), originalname: "pic.jpg" },
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(502);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        message: expect.stringContaining("Failed to upload image to Cloudinary"),
+      })
+    );
+    // Must NOT push into user.photos or save
+    expect(mockUser.photos).toHaveLength(0);
+    expect(mockUser.save).not.toHaveBeenCalled();
+  });
+
+  it("successfully uploads image buffer to Cloudinary and saves secure_url and public_id", async () => {
+    vi.spyOn(cloudinaryUtils, "isCloudinaryConfigured").mockReturnValue(true);
+    vi.spyOn(cloudinaryUtils, "uploadImageBuffer").mockResolvedValue({
+      url: "https://res.cloudinary.com/test-cloud/image/upload/v1234/velvet/profiles/user_123/img.jpg",
+      publicId: "velvet/profiles/user_123/img",
+    });
+
+    const mockUser = {
+      _id: "user_123",
+      photos: [],
+      checkCompletionStatus: vi.fn().mockReturnValue({ isComplete: false }),
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({
+        photos: [
+          {
+            id: "ph_1",
+            url: "https://res.cloudinary.com/test-cloud/image/upload/v1234/velvet/profiles/user_123/img.jpg",
+            publicId: "velvet/profiles/user_123/img",
+            isPrimary: true,
+          },
+        ],
+      }),
+    };
+    const req = {
+      user: mockUser,
+      file: { buffer: Buffer.from("image-bytes"), originalname: "portrait.jpg" },
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(mockUser.photos).toHaveLength(1);
+    expect(mockUser.photos[0]).toEqual({
+      url: "https://res.cloudinary.com/test-cloud/image/upload/v1234/velvet/profiles/user_123/img.jpg",
+      publicId: "velvet/profiles/user_123/img",
+      isPrimary: true,
+    });
+    expect(mockUser.photos[0].publicId).not.toContain("local:");
+    expect(mockUser.save).toHaveBeenCalled();
+  });
+
+  it("uploads external HTTPS URL to Cloudinary and saves Cloudinary asset details", async () => {
+    vi.spyOn(cloudinaryUtils, "isCloudinaryConfigured").mockReturnValue(true);
+    vi.spyOn(cloudinaryUtils, "uploadImageUrl").mockResolvedValue({
+      url: "https://res.cloudinary.com/test-cloud/image/upload/v5678/velvet/profiles/user_123/unsplash.jpg",
+      publicId: "velvet/profiles/user_123/unsplash",
+    });
+
+    const mockUser = {
+      _id: "user_123",
+      photos: [{ url: "https://res.cloudinary.com/demo/p1.jpg", publicId: "velvet/profiles/user_123/p1", isPrimary: true }],
+      checkCompletionStatus: vi.fn().mockReturnValue({ isComplete: false }),
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({ photos: [] }),
+    };
+
+    const req = {
+      user: mockUser,
+      body: { url: "https://images.unsplash.com/photo-12345" },
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(mockUser.photos).toHaveLength(2);
+    expect(mockUser.photos[1]).toEqual({
+      url: "https://res.cloudinary.com/test-cloud/image/upload/v5678/velvet/profiles/user_123/unsplash.jpg",
+      publicId: "velvet/profiles/user_123/unsplash",
+      isPrimary: false,
+    });
+    expect(mockUser.save).toHaveBeenCalled();
+  });
+
+  it("rejects non-HTTPS URLs or localhost/uploads schemes", async () => {
+    const mockUser = { photos: [] };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await addPhoto({ user: mockUser, body: { url: "http://insecure.com/pic.jpg" } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    await addPhoto({ user: mockUser, body: { url: "https://localhost:8000/uploads/profiles/1.jpg" } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe("Photo Deletion & Primary Reassignment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  it("deletes photo and calls deleteCloudinaryImage for Cloudinary publicId", async () => {
+    const deleteCloudSpy = vi.spyOn(cloudinaryUtils, "deleteCloudinaryImage").mockResolvedValue(true);
+
+    const mockPhoto = {
+      _id: "photo_123",
+      url: "https://res.cloudinary.com/test-cloud/image/upload/v1/velvet/profiles/u1/photo_123.jpg",
+      publicId: "velvet/profiles/u1/photo_123",
+      isPrimary: false,
+    };
+
+    const mockUser = {
+      _id: "u1",
+      photos: {
+        id: vi.fn().mockReturnValue(mockPhoto),
+        pull: vi.fn(),
+        length: 2,
+      },
+      checkCompletionStatus: vi.fn().mockReturnValue({ isComplete: false }),
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({ photos: [] }),
+    };
+
+    const req = { user: mockUser, params: { photoId: "photo_123" } };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await deletePhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mockUser.photos.pull).toHaveBeenCalledWith({ _id: "photo_123" });
+    expect(mockUser.save).toHaveBeenCalled();
+    expect(deleteCloudSpy).toHaveBeenCalledWith("velvet/profiles/u1/photo_123");
+  });
+
+  it("does NOT call deleteCloudinaryImage when deleting a legacy local: publicId", async () => {
+    const deleteCloudSpy = vi.spyOn(cloudinaryUtils, "deleteCloudinaryImage").mockResolvedValue(true);
+
+    const mockPhoto = {
+      _id: "legacy_photo_456",
+      url: "https://velvet-dating-app.onrender.com/uploads/profiles/u1/1793133040081-lpcogl.jpg",
+      publicId: "local:1793133040081-lpcogl.jpg",
+      isPrimary: false,
+    };
+
+    const mockUser = {
+      _id: "u1",
+      photos: {
+        id: vi.fn().mockReturnValue(mockPhoto),
+        pull: vi.fn(),
+        length: 1,
+      },
+      checkCompletionStatus: vi.fn().mockReturnValue({ isComplete: false }),
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({ photos: [] }),
+    };
+
+    const req = { user: mockUser, params: { photoId: "legacy_photo_456" } };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await deletePhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mockUser.photos.pull).toHaveBeenCalledWith({ _id: "legacy_photo_456" });
+    // Must NOT call Cloudinary for local: publicIds!
+    expect(deleteCloudSpy).not.toHaveBeenCalled();
+  });
+
+  it("reassigns first remaining photo as primary when primary photo is deleted", async () => {
+    const remainingPhoto = { _id: "ph_2", isPrimary: false };
+    const deletedPhoto = { _id: "ph_1", isPrimary: true, publicId: "velvet/profiles/u1/ph_1" };
+
+    const photosArray = [remainingPhoto];
+    photosArray.id = vi.fn().mockReturnValue(deletedPhoto);
+    photosArray.pull = vi.fn();
+
+    const mockUser = {
+      _id: "u1",
+      photos: photosArray,
+      checkCompletionStatus: vi.fn().mockReturnValue({ isComplete: false }),
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({ photos: [] }),
+    };
+
+    const req = { user: mockUser, params: { photoId: "ph_1" } };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await deletePhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(remainingPhoto.isPrimary).toBe(true);
+    expect(mockUser.save).toHaveBeenCalled();
+  });
+});
+
+describe("Primary Photo Selection", () => {
+  it("setPrimaryPhoto sets chosen photo to true and all others to false", async () => {
+    const photo1 = { _id: { toString: () => "ph_1" }, isPrimary: true };
+    const photo2 = { _id: { toString: () => "ph_2" }, isPrimary: false };
+
+    const photos = [photo1, photo2];
+    photos.id = vi.fn().mockImplementation((id) => photos.find((p) => p._id.toString() === id));
+
+    const mockUser = {
+      photos,
+      save: vi.fn().mockResolvedValue(true),
+      toSafeProfile: vi.fn().mockReturnValue({ photos }),
+    };
+
+    const req = { user: mockUser, params: { photoId: "ph_2" } };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+
+    await setPrimaryPhoto(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(photo1.isPrimary).toBe(false);
+    expect(photo2.isPrimary).toBe(true);
+    expect(mockUser.save).toHaveBeenCalled();
   });
 });

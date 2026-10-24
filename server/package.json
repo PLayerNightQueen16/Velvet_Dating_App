@@ -8,6 +8,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "vitest run",
+    "migrate:photos": "node scripts/migrateLegacyPhotos.js",
+    "migrate:photos:dry-run": "node scripts/migrateLegacyPhotos.js --dry-run",
     "seed:demo": "SEED_DEMO_PROFILES=true node scripts/seedProfiles.js"
   },
   "dependencies": {

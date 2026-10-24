@@ -7,10 +7,15 @@ build/
 
 # Environment files — never commit secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.env
+server/.env
+client/.env
+
+# Backups
+backups/
+server/backups/
 
 # OS & editor
 .DS_Store

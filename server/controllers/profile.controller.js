@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { calculateAge, validateAgeRange } from "../utils/ageValidator.js";
 import {
   uploadImageBuffer,
+  uploadImageUrl,
   deleteCloudinaryImage,
   isCloudinaryConfigured,
   generateUploadSignature,
@@ -274,7 +275,7 @@ export async function completeProfile(req, res) {
 }
 
 /**
- * Add a photo via Cloudinary upload or HTTPS URL
+ * Add a photo via Cloudinary upload (file buffer) or HTTPS URL (imported into Cloudinary)
  * POST /api/profile/me/photos
  */
 export async function addPhoto(req, res) {
@@ -294,35 +295,31 @@ export async function addPhoto(req, res) {
 
     // Case 1: Image file uploaded via Multer
     if (req.file) {
-      let uploadedToCloud = false;
-
-      // Attempt Cloudinary upload if configured
-      if (isCloudinaryConfigured()) {
-        try {
-          const uploadResult = await uploadImageBuffer(req.file.buffer, user._id.toString());
-          photoUrl = uploadResult.url;
-          publicId = uploadResult.publicId;
-          uploadedToCloud = true;
-        } catch (cloudErr) {
-          console.warn("Cloudinary upload rejected, falling back to local media storage:", cloudErr.message);
-        }
+      if (!isCloudinaryConfigured()) {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Photo storage service (Cloudinary) is not configured on the server. Please verify that CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set.",
+        });
       }
 
-      // If Cloudinary is unavailable or rejected (e.g. 403 read-only key), persist to local uploads
-      if (!uploadedToCloud) {
-        const uploadsDir = path.join(__dirname, "../uploads/profiles", user._id.toString());
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
+      try {
+        const uploadResult = await uploadImageBuffer(req.file.buffer, user._id.toString());
+        photoUrl = uploadResult.url;
+        publicId = uploadResult.publicId;
+      } catch (cloudErr) {
+        console.error("Cloudinary file upload failed:", cloudErr.message || cloudErr);
+        const isForbidden =
+          cloudErr.http_code === 403 ||
+          String(cloudErr.message).includes("403") ||
+          String(cloudErr.message).includes("forbidden");
 
-        const ext = path.extname(req.file.originalname) || ".jpg";
-        const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-        const filePath = path.join(uploadsDir, filename);
-
-        await fs.promises.writeFile(filePath, req.file.buffer);
-
-        const protocol = req.protocol || "http";
-        const host = req.get("host") || "localhost:8000";
-        photoUrl = `${protocol}://${host}/uploads/profiles/${user._id.toString()}/${filename}`;
-        publicId = `local:${filename}`;
+        return res.status(isForbidden ? 403 : 502).json({
+          success: false,
+          message: isForbidden
+            ? "Cloudinary upload rejected (403 Forbidden): The configured API key lacks upload permissions. Please ensure your Cloudinary Access Key has upload permissions in Cloudinary Settings > Access Keys."
+            : `Failed to upload image to Cloudinary: ${cloudErr.message || "Unknown error"}`,
+        });
       }
     }
     // Case 2: Direct image URL provided in request body
@@ -338,14 +335,38 @@ export async function addPhoto(req, res) {
       }
 
       // Reject malicious or local URI schemes
-      if (rawUrl.startsWith("javascript:") || rawUrl.startsWith("data:") || rawUrl.includes("localhost")) {
+      if (
+        rawUrl.startsWith("javascript:") ||
+        rawUrl.startsWith("data:") ||
+        rawUrl.includes("localhost") ||
+        rawUrl.includes("127.0.0.1") ||
+        rawUrl.includes("/uploads/")
+      ) {
         return res.status(400).json({
           success: false,
-          message: "Unsupported image URL scheme.",
+          message: "Unsupported image URL scheme. Please provide an external HTTPS image URL.",
         });
       }
 
-      photoUrl = rawUrl;
+      if (!isCloudinaryConfigured()) {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Photo storage service (Cloudinary) is not configured on the server. Please verify that CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set.",
+        });
+      }
+
+      try {
+        const uploadResult = await uploadImageUrl(rawUrl, user._id.toString());
+        photoUrl = uploadResult.url;
+        publicId = uploadResult.publicId;
+      } catch (cloudErr) {
+        console.error("Cloudinary URL import failed:", cloudErr.message || cloudErr);
+        return res.status(502).json({
+          success: false,
+          message: `Failed to import photo to Cloudinary: ${cloudErr.message || "Invalid image resource"}`,
+        });
+      }
     } else {
       return res.status(400).json({
         success: false,
@@ -376,17 +397,7 @@ export async function addPhoto(req, res) {
     });
   } catch (error) {
     console.error("addPhoto error:", error);
-    let message = error.message || "Failed to add photo.";
-    if (
-      error.http_code === 403 ||
-      String(error.message).includes("403") ||
-      String(error.message).includes("forbidden") ||
-      String(error.message).includes("missing permissions")
-    ) {
-      message =
-        "Cloudinary upload rejected (403 Forbidden): The configured API key lacks 'create/upload' permissions. Please ensure your Cloudinary Access Key has upload permissions in Cloudinary Settings > Access Keys, or add photos using the 'Add via URL' option.";
-    }
-    return res.status(500).json({ success: false, message });
+    return res.status(500).json({ success: false, message: error.message || "Failed to add photo." });
   }
 }
 
@@ -453,7 +464,7 @@ export async function deletePhoto(req, res) {
 
     await user.save();
 
-    // Asynchronously destroy asset (Cloudinary or local)
+    // Asynchronously destroy asset in Cloudinary (safely skip legacy local public IDs)
     if (publicIdToDelete) {
       if (publicIdToDelete.startsWith("local:")) {
         const filename = publicIdToDelete.replace("local:", "");
@@ -461,7 +472,7 @@ export async function deletePhoto(req, res) {
         fs.promises.unlink(filePath).catch(() => {});
       } else {
         deleteCloudinaryImage(publicIdToDelete).catch((err) =>
-          console.warn("Async Cloudinary deletion error:", err)
+          console.warn("Async Cloudinary deletion error:", err?.message || err)
         );
       }
     }

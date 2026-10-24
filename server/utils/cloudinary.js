@@ -5,14 +5,23 @@ dotenv.config();
 
 /**
  * Configure and return Cloudinary instance.
+ * Supports both individual CLOUDINARY_* variables and unified CLOUDINARY_URL.
  */
 function ensureCloudinaryConfig() {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-  });
+  if (process.env.CLOUDINARY_URL) {
+    cloudinary.config();
+  } else if (
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_API_KEY ||
+    process.env.CLOUDINARY_API_SECRET
+  ) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+  }
   return cloudinary;
 }
 
@@ -20,20 +29,17 @@ function ensureCloudinaryConfig() {
 ensureCloudinaryConfig();
 
 /**
- * Checks if Cloudinary is fully configured with credentials.
+ * Checks if Cloudinary is fully configured with valid credentials.
  */
 export function isCloudinaryConfigured() {
   ensureCloudinaryConfig();
-  return Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
+  const conf = cloudinary.config();
+  return Boolean(conf.cloud_name && conf.api_key && conf.api_secret);
 }
 
 /**
  * Uploads an image buffer directly to Cloudinary using a stream.
- * Used for server-mediated uploads via Multer.
+ * Used for server-mediated uploads via Multer memoryStorage.
  *
  * @param {Buffer} fileBuffer - Image file buffer
  * @param {string} userId     - User ID to namespace the Cloudinary folder
@@ -41,7 +47,7 @@ export function isCloudinaryConfigured() {
  */
 export async function uploadImageBuffer(fileBuffer, userId) {
   if (!isCloudinaryConfigured()) {
-    throw new Error("Cloudinary service is not configured on the server.");
+    throw new Error("Cloudinary service is not configured on the server. Please check Cloudinary environment variables.");
   }
 
   ensureCloudinaryConfig();
@@ -65,6 +71,9 @@ export async function uploadImageBuffer(fileBuffer, userId) {
           console.error("Cloudinary upload stream error:", error);
           return reject(new Error(error.message || "Failed to upload image to Cloudinary."));
         }
+        if (!result || !result.secure_url) {
+          return reject(new Error("Cloudinary did not return a valid secure URL."));
+        }
         resolve({
           url: result.secure_url,
           publicId: result.public_id,
@@ -74,6 +83,47 @@ export async function uploadImageBuffer(fileBuffer, userId) {
 
     uploadStream.end(fileBuffer);
   });
+}
+
+/**
+ * Uploads an image from an external HTTPS URL directly to Cloudinary.
+ * Used for adding photos via URL or presets, guaranteeing they are stored in Cloudinary.
+ *
+ * @param {string} imageUrl - External HTTPS image URL
+ * @param {string} userId   - User ID to namespace the Cloudinary folder
+ * @returns {Promise<{ url: string, publicId: string }>}
+ */
+export async function uploadImageUrl(imageUrl, userId) {
+  if (!isCloudinaryConfigured()) {
+    throw new Error("Cloudinary service is not configured on the server. Please check Cloudinary environment variables.");
+  }
+
+  ensureCloudinaryConfig();
+
+  try {
+    const result = await cloudinary.uploader.upload(imageUrl, {
+      folder: `velvet/profiles/${userId}`,
+      resource_type: "image",
+      allowed_formats: ["jpg", "jpeg", "png", "webp", "heic"],
+      transformation: [
+        { width: 1200, height: 1600, crop: "limit" },
+        { quality: "auto:good", fetch_format: "auto" },
+      ],
+      context: { user_id: userId, app: "velvet" },
+    });
+
+    if (!result || !result.secure_url) {
+      throw new Error("Cloudinary did not return a valid secure URL.");
+    }
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+    };
+  } catch (error) {
+    console.error("Cloudinary upload URL error:", error);
+    throw new Error(error.message || "Failed to upload image URL to Cloudinary.");
+  }
 }
 
 /**
@@ -90,6 +140,7 @@ export function generateUploadSignature(userId, timestamp) {
   }
 
   ensureCloudinaryConfig();
+  const conf = cloudinary.config();
 
   const folder = `velvet/profiles/${userId}`;
   const params = {
@@ -100,13 +151,13 @@ export function generateUploadSignature(userId, timestamp) {
 
   const signature = cloudinary.utils.api_sign_request(
     params,
-    process.env.CLOUDINARY_API_SECRET
+    conf.api_secret
   );
 
   return {
     signature,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: conf.api_key,
+    cloudName: conf.cloud_name,
     timestamp,
     folder,
   };
@@ -115,12 +166,13 @@ export function generateUploadSignature(userId, timestamp) {
 /**
  * Deletes an image from Cloudinary by its public ID.
  * Only call this for assets belonging to the authenticated user.
+ * Safely ignores local legacy public IDs.
  *
  * @param {string} publicId
  * @returns {Promise<boolean>}
  */
 export async function deleteCloudinaryImage(publicId) {
-  if (!isCloudinaryConfigured() || !publicId) {
+  if (!isCloudinaryConfigured() || !publicId || String(publicId).startsWith("local:")) {
     return false;
   }
 

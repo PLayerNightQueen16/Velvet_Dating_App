@@ -140,10 +140,29 @@ export default function AuthenticatedHome() {
               <Link to="/profile/edit" className="text-xs text-[#F2B6C2]/60 hover:text-[#F2B6C2] transition-colors">Manage →</Link>
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {user.photos.map(photo => (
-                <div key={photo._id} className="aspect-square rounded-xl overflow-hidden border relative"
-                  style={{ borderColor: photo.isPrimary ? "rgba(212,175,151,0.6)" : "rgba(242,182,194,0.15)" }}>
-                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
+              {user.photos.map((photo) => (
+                <div
+                  key={photo._id || photo.id}
+                  className="aspect-square rounded-xl overflow-hidden border relative bg-[#2D121B]"
+                  style={{ borderColor: photo.isPrimary ? "rgba(212,175,151,0.6)" : "rgba(242,182,194,0.15)" }}
+                >
+                  <img
+                    src={photo.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      if (e.currentTarget.nextSibling) {
+                        e.currentTarget.nextSibling.style.display = "flex";
+                      }
+                    }}
+                  />
+                  <div
+                    style={{ display: "none" }}
+                    className="w-full h-full flex flex-col items-center justify-center bg-[#1A0F13] text-[#F2B6C2]/40"
+                  >
+                    <Camera size={14} />
+                  </div>
                 </div>
               ))}
             </div>

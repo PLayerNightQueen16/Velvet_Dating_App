@@ -143,6 +143,7 @@ function Section({ icon: Icon, title, children, badge, subtitle }) {
 /* ===================== Photo Card ===================== */
 function PhotoCard({ photo, isPrimary, onSetPrimary, onDelete }) {
   const [imgError, setImgError] = useState(false);
+  const isUnavailable = imgError || Boolean(photo.requiresReupload);
   return (
     <div
       className="relative group aspect-[3/4] rounded-2xl overflow-hidden border transition-all duration-200 shadow-md"
@@ -151,7 +152,7 @@ function PhotoCard({ photo, isPrimary, onSetPrimary, onDelete }) {
         background: "rgba(26,15,19,0.7)",
       }}
     >
-      {!imgError ? (
+      {!isUnavailable ? (
         <img
           src={photo.url}
           alt="Profile photo"
@@ -159,22 +160,23 @@ function PhotoCard({ photo, isPrimary, onSetPrimary, onDelete }) {
           onError={() => setImgError(true)}
         />
       ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3 text-center">
-          <AlertCircle size={22} className="text-[#F2B6C2]/40" />
-          <span className="text-[10px] text-[#F2B6C2]/50">Image unavailable</span>
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 p-3 text-center bg-[#1A0F13]">
+          <AlertCircle size={22} className="text-amber-400/90 mb-1" />
+          <span className="text-[11px] font-medium text-[#F8EDEB]">Photo Unavailable</span>
+          <span className="text-[9px] text-[#F2B6C2]/60 leading-tight">Remove and re-upload</span>
         </div>
       )}
 
       {/* Primary Badge */}
       {isPrimary && (
-        <div className="absolute top-2.5 left-2.5 bg-[#D4AF97] text-[#1A0F13] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+        <div className="absolute top-2.5 left-2.5 bg-[#D4AF97] text-[#1A0F13] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md z-10">
           <Star size={10} className="fill-[#1A0F13]" /> Primary
         </div>
       )}
 
       {/* Hover action overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2.5 gap-1.5">
-        {!isPrimary && (
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2.5 gap-1.5 z-20">
+        {!isPrimary && !isUnavailable && (
           <button
             type="button"
             onClick={() => onSetPrimary(photo._id || photo.id)}
@@ -327,13 +329,9 @@ export default function ProfileEdit() {
       if (res.profileCompleted !== undefined) setCompletionStatus(res.profileCompleted);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "";
-      if (msg.includes("403") || msg.includes("Cloudinary")) {
-        setError(
-          "Cloudinary upload rejected (403): The configured API key lacks upload permissions. You can easily add photos right now using the 'Add via URL' tab below!"
-        );
+      setError(msg || "Upload failed. Please check file format (JPEG, PNG, WebP).");
+      if (msg.includes("403")) {
         setPhotoMode("url");
-      } else {
-        setError(msg || "Upload failed. Please check file format (JPEG, PNG, WebP).");
       }
     } finally {
       setUploading(false);

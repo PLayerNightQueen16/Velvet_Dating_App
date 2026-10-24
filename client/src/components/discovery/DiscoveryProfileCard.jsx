@@ -253,7 +253,7 @@ export default function DiscoveryProfileCard({
 
       {/* ── Photo Section with Carousel Controls ─────────────────────────── */}
       <div className="relative aspect-[4/5] sm:aspect-[3/4] w-full overflow-hidden bg-[#1A0F13]">
-        {currentPhoto && !imageError[currentPhoto.id || activePhotoIdx] ? (
+        {currentPhoto && !imageError[currentPhoto.id || activePhotoIdx] && !currentPhoto.requiresReupload ? (
           <img
             src={currentPhoto.url}
             alt={`${profile.name} - photo ${activePhotoIdx + 1}`}
