@@ -4,6 +4,8 @@
 
 VELVET is an intimate, cinematic dating platform built for meaningful, compatibility-driven romantic connections. Blending rich crimson aesthetics, dynamic ambient particle effects, and rigorous engineering, VELVET delivers a modern dating experience featuring calendar-accurate age verification, real-time messaging, intelligent discovery matching, and uncompromising privacy safeguards.
 
+📹 **[Demonstration Video](https://drive.google.com/file/d/1fMXXVFp6synkUlXPBQkYCndKnZM0hnSk/view?usp=drive_link)**
+
 ---
 
 ## 🌟 Key Highlights & Features
