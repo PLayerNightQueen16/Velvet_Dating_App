@@ -161,4 +161,38 @@ export async function unmatchConnection(matchId) {
   return response.data;
 }
 
+// ── Chat Endpoints (Batch 6) ──────────────────────────────────────────────────
+// List active conversations with last-message previews
+export async function getConversations(params = {}) {
+  const response = await api.get("/chat/conversations", { params });
+  return response.data;
+}
+
+// Load paginated conversation history
+export async function getChatHistory(matchId, params = {}) {
+  const response = await api.get(`/chat/${matchId}/messages`, { params });
+  return response.data;
+}
+
+// Send a message via REST fallback
+export async function sendMessageRest(matchId, { text, clientMessageId }) {
+  const response = await api.post(`/chat/${matchId}/messages`, {
+    text,
+    clientMessageId,
+  });
+  return response.data;
+}
+
+// Mark messages as read
+export async function markChatRead(matchId, { beforeCursor } = {}) {
+  const response = await api.post(`/chat/${matchId}/read`, { beforeCursor });
+  return response.data;
+}
+
+// Get unread counts
+export async function getUnreadCounts() {
+  const response = await api.get("/chat/unread");
+  return response.data;
+}
+
 export default api;
