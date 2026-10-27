@@ -54,7 +54,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
           {/* Brand block */}
           <div className="md:col-span-2 flex flex-col gap-4">
-            <Logo size="md" />
+            <Logo size="lg" />
             <p
               className="text-sm font-display italic leading-relaxed max-w-sm"
               style={{ color: "#D4AF97" }}

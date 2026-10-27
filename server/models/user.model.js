@@ -254,6 +254,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Demo Account Flag (distinguishes synthetic demo profiles)
+    isDemo: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

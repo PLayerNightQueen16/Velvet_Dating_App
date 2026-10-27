@@ -2,219 +2,425 @@
 
 > *"I once believed love would be burning red...then you turned my world crimson instead"*
 
-VELVET is a full-stack MERN dating application designed for meaningful, compatibility-driven connections with a romantic aesthetic.
+VELVET is an intimate, cinematic dating platform built for meaningful, compatibility-driven romantic connections. Blending rich crimson aesthetics, dynamic ambient particle effects, and rigorous engineering, VELVET delivers a modern dating experience featuring calendar-accurate age verification, real-time messaging, intelligent discovery matching, and uncompromising privacy safeguards.
 
 ---
 
-## Project Structure
+## 🌟 Key Highlights & Features
+
+### 🌹 Romantic & Cinematic Interface
+- **Velvet Design System**: Deep crimson, dark rose, and midnight charcoal tones (`#12080C`, `#3A0D1A`, `#8B1E3F`, `#E05370`, `#FDE7E9`).
+- **Ambient Visual Effects**: Flowing canvas particle system featuring floating crimson rose petals, ambient light motes, and shimmering glitter.
+- **Glassmorphic Components**: Polished translucent cards with glowing borders and micro-interactions powered by Framer Motion.
+
+### 👤 Profile Studio & Adult Verification
+- **Calendar-Aware Age Validation**: Server-enforced boundary ensuring all accounts are 18+ (leap-year compliant, strictly evaluated on birthdate).
+- **Curated Media Uploads**: Integrated with Cloudinary for fast, optimized image delivery (minimum 3, maximum 5 photos per profile).
+- **Romantic Prompts & Interests**: Deep personal storytelling with structured prompts, lifestyle tags, relationship intentions, languages, and education.
+
+### 🔍 Intelligent Discovery Deck
+- **Reciprocal Compatibility Matching**: Bidirectional filtering ensuring users only see candidates whose preferences align mutually with their own.
+- **Dynamic Filters**: Real-time filtering by age range, distance, shared interests, and relationship goals.
+- **Intuitive Swipe Interface**: Fluid Tinder-style card gestures, keyboard navigation (arrow keys), and persistent like/pass actions.
+
+### 💫 Atomic Mutual Matching
+- **Concurrency-Safe Matching**: Race-condition resilient mutual like resolution using MongoDB canonical pairs (`[user1, user2]`) and unique indexes (`E11000` handling).
+- **Likes & Matches Hub**: Dedicated views for sent likes, incoming likes with instant "Like Back" mutual matching, and active matches.
+- **Match Celebration**: Immersive modal celebration when mutual affection is sparked.
+
+### 💬 Real-Time Crimson Chat
+- **Socket.IO Real-Time Engine**: Instant messaging with live typing events, read receipts, and real-time conversation previews.
+- **Robust REST Fallback**: Seamless polling and message persistence in MongoDB when WebSockets reconnect or disconnect.
+- **Strict Authorization**: Chat access is strictly restricted to active, non-blocked match participants.
+
+### 🛡️ Privacy & Safety Guardian
+- **Bidirectional Blocking**: Instantly revokes discovery visibility, existing matches, and active chat access in both directions.
+- **Confidential Reporting**: Secure submission of moderation reports with categorization and optional blocking.
+- **Privacy Controls**: Granular toggles for profile discoverability, online presence, and last-active timestamps.
+- **Account Deletion & Security**: Multi-step password rotation with session token version invalidation and full GDPR-compliant data cleanup.
+
+---
+
+## 🏗️ Architecture & Tech Stack
 
 ```
 velvet/
-├── client/                     # React 19 + Vite + Tailwind CSS 4 frontend
-│   ├── public/
-│   │   ├── logo.png            # VELVET brand logo
-│   │   └── vercel.json         # SPA routing for Vercel deployment
-│   └── src/
-│       ├── components/
-│       │   ├── ui/             # AnimatedRoseBackground, Logo, Feedback
-│       │   ├── layout/         # Navbar, Footer, ProtectedRoute
-│       │   ├── cards/          # Profile display cards
-│       │   └── discovery/      # DiscoveryProfileCard, DiscoveryFiltersModal
-│       ├── pages/              # LandingPage, AuthPages, ProfileOnboarding, ProfileEdit, AuthenticatedHome, Discovery
-│       ├── context/            # AuthContext (JWT auth, current user state)
-│       ├── services/           # api.js (Axios client with withCredentials: true)
-│       ├── App.jsx             # Smart routes and global rose-petal animation
-│       ├── main.jsx
-│       └── index.css           # VELVET design system
-└── server/                     # Express 5 + MongoDB API
-    ├── controllers/            # auth.controller.js, profile.controller.js, discovery.controller.js
-    ├── models/                 # user.model.js, swipe.model.js, block.model.js
-    ├── routes/                 # auth.routes.js, profile.routes.js, discovery.routes.js
-    ├── middlewares/            # auth.middleware.js (JWT verification & user hydration)
-    ├── utils/                  # ageValidator.js, cloudinary.js, compatibility.js, profileConstants.js, connectDB.js
-    └── tests/                  # Vitest test suites (ageValidator, compatibility, discovery, profileController, userModel)
+├── client/                     # React 19 Single Page Application
+│   ├── public/                 # Static assets & brand logos
+│   │   ├── logo.png            # VELVET brand mark
+│   │   └── vercel.json         # SPA routing fallback for Vercel
+│   ├── src/
+│   │   ├── components/         # Reusable UI, layout, discovery, chat, and modal components
+│   │   ├── context/            # AuthContext (authentication & session management)
+│   │   ├── pages/              # Landing, Auth, Onboarding, Discovery, Likes, Matches, Chat, Settings
+│   │   ├── services/           # Axios API client (credentials enabled) & Socket.IO client
+│   │   ├── index.css           # Tailwind CSS 4 theme tokens & custom animations
+│   │   └── setupTests.js       # Vitest + React Testing Library setup
+│   ├── package.json
+│   ├── vercel.json             # Vercel deployment configuration
+│   └── vite.config.js          # Vite 6 configuration with Tailwind CSS 4
+│
+├── server/                     # Express 5 REST & WebSocket API
+│   ├── controllers/            # Auth, Profile, Discovery, Likes, Matches, Chat, Safety, Account
+│   ├── middlewares/            # JWT verification & session authentication middleware
+│   ├── models/                 # Mongoose schemas (User, Swipe, Like, Match, Message, Block, Report)
+│   ├── routes/                 # Express API route modules
+│   ├── scripts/                # Demo profile seeding with safety gates
+│   ├── socket/                 # Socket.IO connection handling & authenticated chat rooms
+│   ├── tests/                  # Vitest backend unit & integration test suites
+│   ├── utils/                  # Age validator, compatibility engine, Cloudinary, DB connection, JWT
+│   ├── package.json
+│   ├── render.yaml             # Render web service blueprint
+│   └── index.js                # Server entry point with trust-proxy & multi-origin CORS
+│
+└── render.yaml                 # Root Render deployment blueprint
 ```
 
----
+### Technology Matrix
 
-## Tech Stack
-
-### Frontend
-- **React 19** with **Vite 6**
-- **Tailwind CSS 4** with curated VELVET color palette
-- **Framer Motion 11** for animations & multi-step transitions
-- **React Router DOM 7** with protected route guards
-- **Axios 1** with credentials support
-- **Lucide React** for icons
-- **Vitest** & **React Testing Library** with jsdom for client tests
-
-### Backend
-- **Express 5** & Node.js
-- **MongoDB Atlas** with **Mongoose 9**
-- **Cloudinary SDK** for secure photo uploads & signatures
-- **Multer** for memory-buffered image handling
-- **JSON Web Tokens (JWT)** with HTTP-only cookies
-- **bcrypt** for salted password hashing
-- **Vitest** for automated unit and integration tests
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React 19, Vite 6, Tailwind CSS 4, Framer Motion 11, React Router 7, Axios, Lucide Icons |
+| **Backend** | Node.js, Express 5, Socket.IO 4, Mongoose 9, JWT, bcrypt, Cookie-Parser, Multer |
+| **Database & Media** | MongoDB Atlas, Cloudinary CDN |
+| **Testing** | Vitest, React Testing Library, JSDOM, Supertest-compatible unit tests |
+| **Hosting** | Vercel (Frontend), Render (Backend), MongoDB Atlas (Database) |
 
 ---
 
-## Getting Started
+## 🚀 Quick Start (Local Development)
 
-### 1. Environment Setup
+### Prerequisites
+- **Node.js**: v18.0.0 or higher (v20+ recommended)
+- **npm**: v9.0.0 or higher
+- **MongoDB**: Local MongoDB instance (`mongodb://127.0.0.1:27017/velvet_dev`) or a MongoDB Atlas cluster URI
+- **Cloudinary Account** *(optional for local testing)*: Cloud name, API key, and secret for photo uploads
 
-#### Server Configuration (`server/.env`):
-Create `server/.env` based on `server/.env.example`:
+---
+
+### Step 1: Clone & Configure
+
+```bash
+git clone https://github.com/PLayerNightQueen16/Velvet_Dating_App.git
+cd Velvet_Dating_App
+```
+
+#### Backend Environment Setup
+Create `server/.env` using the provided template:
+```bash
+cp server/.env.example server/.env
+```
+
+Configure `server/.env`:
 ```env
 PORT=8000
 NODE_ENV=development
+MONGO_URI=mongodb://127.0.0.1:27017/velvet_dev
+JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters
+JWT_EXPIRES_IN=7d
+COOKIE_SECRET=your_cookie_signing_secret_key
 CLIENT_URL=http://localhost:5173
 
-# MongoDB Atlas
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/velvet?retryWrites=true&w=majority
-
-# JWT & Cookie
-JWT_SECRET=your_super_secret_jwt_key
-JWT_EXPIRES_IN=7d
-COOKIE_SECRET=your_cookie_signing_secret
-
-# Optional Cloudinary Storage (Mandatory 3 photos, maximum 5 photos)
+# Cloudinary (Optional for demo seeding, required for real photo uploads)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+# Demo Seeding Controls
+SEED_DEMO_PROFILES=true
+ALLOW_PRODUCTION_DEMO_SEED=false
 ```
 
-#### Client Configuration (`client/.env`):
+#### Frontend Environment Setup
+Create `client/.env` using the template:
+```bash
+cp client/.env.example client/.env
+```
+
+Configure `client/.env`:
 ```env
 VITE_API_URL=http://localhost:8000/api
+VITE_SERVER_URL=http://localhost:8000
 ```
 
-### 2. Running Locally
+---
 
-#### Run Backend Server:
+### Step 2: Install Dependencies
+
 ```bash
+# Install Server dependencies
 cd server
 npm install
-npm run dev        # API running on http://localhost:8000
+
+# Install Client dependencies
+cd ../client
+npm install
 ```
 
-#### Run Frontend Client:
+---
+
+### Step 3: Seed Demo Profiles (Optional)
+
+VELVET includes a safe, deterministic seeding script providing 9 diverse fictional adult profiles (3 women, 3 men, 3 non-binary) with high-definition portraits, rich prompts, and varied relationship intentions:
+
+```bash
+cd server
+npm run seed:demo
+```
+> **Safety Guard**: The script requires `SEED_DEMO_PROFILES=true`. It executes idempotently (running multiple times updates rather than duplicates accounts) and tags all created records with `isDemo: true`.
+
+---
+
+### Step 4: Run the Application
+
+In terminal 1 (Backend API):
+```bash
+cd server
+npm run dev
+# Server starts on http://localhost:8000
+# Health check available at http://localhost:8000/health
+```
+
+In terminal 2 (Frontend Client):
 ```bash
 cd client
-npm install
-npm run dev        # Client running on http://localhost:5173
+npm run dev
+# Frontend starts on http://localhost:5173
 ```
 
----
-
-## Discovery & Swiping Rules (Batch 4)
-
-### Eligibility & Exclusions:
-1. **Profile Completion**: Requester must have completed onboarding (`profileCompleted: true`) to access Discovery.
-2. **Self-Exclusion**: The acting user never appears in their own discovery feed and cannot like or pass themselves.
-3. **Persistent Swipes**: Candidates already liked or passed by the requester (stored in `Swipe` collection) are excluded.
-4. **Safety Block Exclusions**: Candidates blocked by the requester or who blocked the requester (stored in `Block` collection) are excluded in both directions.
-5. **Real Cloudinary Photos**: Candidates must have at least 1 verified photo (`photos.0` exists).
-6. **Strict 18+ Boundary**: Calendar-aware server age verification; underage profiles are permanently excluded.
-
-### Compatibility Semantics:
-- **Forward Compatibility**: Candidate's gender must match requester's `preferences.interestedIn` (or `"everyone"`).
-- **Reciprocal Compatibility**: Requester's gender must also match candidate's `preferences.interestedIn`.
-- **Age Filter**: Candidate birthdate must fall between inclusive `minAge` (≥ 18) and `maxAge` (≤ 100).
-- **Interest Filter**: Candidate must share at least one selected interest (any-match convention).
-- **Relationship Intention**: Candidates must match selected relationship intentions (`long-term`, `short-term`, `casual`, `friendship`, `figuring-it-out`).
+Open your browser to `http://localhost:5173` to experience VELVET.
 
 ---
 
-## Discovery API Endpoints
+## 🧪 Automated Testing
 
-All discovery endpoints require active JWT authentication:
+Both client and server have comprehensive automated test suites using **Vitest**:
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/discovery` | Retrieve candidate profiles matching filters and compatibility rules (deterministic pagination) |
-| `POST` | `/api/discovery/:userId/like` | Send a like to a candidate profile (persisted atomically in `Swipe` collection) |
-| `POST` | `/api/discovery/:userId/pass` | Pass on a candidate profile (persisted atomically in `Swipe` collection) |
-| `POST` | `/api/discovery/:userId/block` | Block a user (persisted atomically in `Block` collection) |
-| `DELETE` | `/api/discovery/:userId/block` | Unblock a user |
-
----
-
-## Mutual Matching, Likes & Matches Lifecycle (Batch 5)
-
-### Source of Truth & Synchronization:
-- **Canonical Action History**: `Swipe` collection tracks discovery decisions (`like` or `pass`).
-- **Active Romantic Intent**: `Like` collection contains active one-sided expressions of interest.
-  - Compound unique index `{ liker: 1, liked: 1 }` prevents duplicates.
-  - Passing on a profile atomically removes any active outgoing like from `Like`.
-  - Withdrawing a like deletes the active `Like` and resets the `Swipe` decision.
-- **Durable Match Lifecycle**: `Match` collection records established connections.
-  - Canonical pair ordering helper `getCanonicalPair(idA, idB)` guarantees deterministic representation (`[user1, user2]`).
-  - Database-enforced compound unique index `{ user1: 1, user2: 1 }` ensures exactly one match record per unordered user pair.
-  - Concurrency safety: simultaneous reciprocal likes catch MongoDB `E11000` duplicate key errors, returning the persisted match with `isNewMatch: false` so at most one request reports a newly created match.
-  - Safety & Unmatching: Unmatching transitions status to `unmatched`, sets `unmatchedAt`/`unmatchedBy`, and deletes active likes between both participants so old likes cannot recreate matches without fresh mutual interest. Blocking deactivates active matches and removes active likes in both directions.
-
----
-
-## Likes & Matches API Endpoints
-
-All likes and matches endpoints require active JWT authentication:
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/discovery` | Candidate profiles matching filters and compatibility rules |
-| `POST` | `/api/discovery/:userId/like` | Send like; triggers atomic mutual match creation if reciprocal interest exists |
-| `POST` | `/api/discovery/:userId/pass` | Pass on profile; clears active outgoing like (requires explicit unmatch if already matched) |
-| `POST` | `/api/discovery/:userId/block` | Block user; deactivates match and removes active likes in both directions |
-| `DELETE` | `/api/discovery/:userId/block` | Unblock user |
-| `GET` | `/api/likes/received` | Active incoming likes (excluding self, blocked, and already matched profiles) |
-| `GET` | `/api/likes/sent` | Active outgoing likes sent by the authenticated user |
-| `DELETE` | `/api/likes/:userId` | Withdraw active outgoing like (rejected if active match exists) |
-| `GET` | `/api/matches` | Active mutual matches for authenticated user, sorted by `matchedAt: -1` |
-| `DELETE` | `/api/matches/:matchId` | Durable unmatch operation; idempotent and safe |
-
----
-
-## Running Automated Tests
-
-### Backend Tests:
+### Backend Tests (117 tests across 8 test suites)
 ```bash
 cd server
 npm test
 ```
-*81 tests passed across 6 test suites:*
-- `tests/ageValidator.test.js`: Calendar-aware adult 18+ age validation (11 tests).
-- `tests/compatibility.test.js`: Gender forward/reciprocal matching and birthdate bounds (7 tests).
-- `tests/discovery.test.js`: Route authorization, parameter validation, exclusions, like/pass persistence, privacy serialization, and model indexes (22 tests).
-- `tests/likesAndMatches.test.js`: Genuine mutual matching, canonical pair uniqueness, concurrency race condition E11000 handling, incoming/outgoing likes pagination, unmatch idempotency, block safety cleanup (20 tests).
-- `tests/profileController.test.js`: Profile update allowlist, completion checks, Cloudinary signature generation (9 tests).
-- `tests/userModel.test.js`: User model constraints, photo limits, prompt limits, safe serialization (12 tests).
+- `tests/ageValidator.test.js`: Strict calendar-aware 18+ age checks and leap-year boundaries.
+- `tests/compatibility.test.js`: Bidirectional gender compatibility and age-range verification.
+- `tests/userModel.test.js`: User schema validation, photo limits, prompt limits, and password hashing.
+- `tests/profileController.test.js`: Profile update allowlists, completion checks, and upload authorization.
+- `tests/discovery.test.js`: Discovery feed filters, exclusions, pagination, and swipe persistence.
+- `tests/likesAndMatches.test.js`: Atomic mutual matching, race conditions, like withdrawals, and unmatch lifecycle.
+- `tests/chat.test.js`: Message persistence, unread counters, match authorization, and participant verification.
+- `tests/safetyAndAccount.test.js`: Blocking, unblocking, moderation reports, privacy settings, and account deletion.
 
-### Frontend Tests:
+### Frontend Tests (70 tests across 13 test suites)
 ```bash
 cd client
 npm test
 ```
-*33 tests passed across 6 test suites:*
-- `DiscoveryProfileCard.test.jsx`: Photo carousel, profile rendering, Like/Pass interaction callbacks, disabled pending states, and keyboard shortcuts (10 tests).
-- `DiscoveryFiltersModal.test.jsx`: Filter modal rendering, filter submission, range validation, and reset behavior (4 tests).
-- `MatchCelebrationModal.test.jsx`: Rendering on new match confirmation, dual portraits, close/dismissal actions, accessible focus trap (5 tests).
-- `UnmatchConfirmModal.test.jsx`: Confirmation dialog, cancel/unmatch actions, accessible dismissal (5 tests).
-- `LikesPage.test.jsx`: Received/sent tab navigation, loading, empty states, Like Back mutual match trigger, and like withdrawal (5 tests).
-- `MatchesPage.test.jsx`: Matches grid, partner profile details modal, unmatch flow, and cancellation (4 tests).
+- Component tests for Discovery Cards, Filter Modals, Match Celebrations, Unmatch Confirmations, Report Modals, Settings, Likes, and Chat.
+
+### Production Build Verification
+```bash
+cd client
+npm run build
+```
+Generates an optimized, minified bundle in `client/dist` ready for static CDN deployment.
 
 ---
 
-## Batch Progress
+## 🌐 Production Deployment Guide
 
-- [x] **Batch 1** — UI foundation, VELVET design system, animated background, landing page
-- [x] **Batch 2** — Authentication, MongoDB connectivity, JWT cookies, protected routes
-- [x] **Batch 3** — Real profiles, multi-step onboarding, profile editing, Cloudinary uploads (min 3, max 5 photos)
-- [x] **Batch 4** — MongoDB-backed discovery, filters, persistent likes, passes, safety blocks, Tinder-style swipe cards
-- [x] **Batch 5** — Genuine mutual matching, likes pages (received & sent), matches page, unmatching, and celebration modal
-- [ ] **Batch 6** — Real-time private chat with Socket.IO
-- [ ] **Batch 7** — Final polish, end-to-end integration, deployment
+Deploying VELVET to production utilizes a decoupled architecture:
+- **Frontend**: Hosted on **Vercel** (Global Edge CDN with SPA rewrites).
+- **Backend**: Hosted on **Render** (Node.js Web Service with WebSockets and reverse proxy trust).
+- **Database**: **MongoDB Atlas** (Managed Cloud Database).
+- **Storage**: **Cloudinary** (Secure image uploads).
+
+```
+                      ┌────────────────────────┐
+                      │   Vercel (Frontend)    │
+                      │  https://app.velvet... │
+                      └───────────┬────────────┘
+                                  │ HTTPS / WSS
+                                  ▼
+                      ┌────────────────────────┐
+                      │    Render (Backend)    │
+                      │  https://api.velvet... │
+                      └───────┬────────┬───────┘
+                              │        │
+                     MongoDB  │        │ Cloudinary API
+                              ▼        ▼
+                      ┌──────────────┐ ┌──────────────┐
+                      │MongoDB Atlas │ │  Cloudinary  │
+                      └──────────────┘ └──────────────┘
+```
 
 ---
 
-*Built with ♥ — VELVET End-Term Project*
+### Part 1: MongoDB Atlas Setup
+
+1. Create a free M0 cluster or dedicated cluster at [mongodb.com/atlas](https://www.mongodb.com/cloud/atlas).
+2. **Database Access**: Under *Security > Database Access*, create a database user (e.g., `velvet_admin`) with read and write permissions to the database.
+3. **Network Access**: Under *Security > Network Access*, add IP address `0.0.0.0/0` (Allow access from anywhere) so that Render's dynamic outbound IPs can connect.
+4. **Connection String**: Click *Connect > Drivers*, copy the connection string:
+   ```
+   mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/velvet_prod?retryWrites=true&w=majority
+   ```
+   *(Ensure special characters in your password are URL-encoded).*
+
+---
+
+### Part 2: Render Backend Deployment
+
+VELVET includes a native `render.yaml` blueprint for one-click setup.
+
+#### Option A: Deploy via Render Blueprint (Recommended)
+1. Push your repository to GitHub.
+2. In the [Render Dashboard](https://dashboard.render.com), click **New + > Blueprint**.
+3. Select your `Velvet_Dating_App` repository.
+4. Render will detect `render.yaml` and configure the web service automatically.
+5. In the environment configuration, supply your real `MONGO_URI`, `CLIENT_URL`, and Cloudinary keys.
+
+#### Option B: Manual Web Service Setup
+1. In the Render Dashboard, click **New + > Web Service**.
+2. Connect your GitHub repository.
+3. Configure the following service settings:
+   - **Name**: `velvet-api`
+   - **Region**: Oregon or Ohio (closest to your Atlas cluster)
+   - **Root Directory**: `server`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Health Check Path**: `/health`
+4. Add the following **Environment Variables**:
+
+| Variable | Value | Description |
+|---|---|---|
+| `NODE_ENV` | `production` | Enables production cookie security & optimizations |
+| `PORT` | `10000` | Port automatically assigned by Render |
+| `MONGO_URI` | `mongodb+srv://...` | Your MongoDB Atlas connection URI |
+| `JWT_SECRET` | *(generate 64-char string)* | Strong secret key for signing auth tokens |
+| `JWT_EXPIRES_IN` | `7d` | Token expiration period |
+| `COOKIE_SECRET` | *(generate 64-char string)* | Key for signing HTTP-only session cookies |
+| `CLIENT_URL` | `https://your-velvet-app.vercel.app` | Vercel production URL (CORS allowlist) |
+| `CLOUDINARY_CLOUD_NAME` | `your_cloud_name` | Cloudinary credentials |
+| `CLOUDINARY_API_KEY` | `your_api_key` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | `your_api_secret` | Cloudinary API secret |
+| `SEED_DEMO_PROFILES` | `false` | Disabled by default in production |
+
+5. Click **Create Web Service**. Once deployed, Render will provide a service URL (e.g. `https://velvet-api.onrender.com`).
+6. Verify deployment by visiting `https://velvet-api.onrender.com/health` in your browser. You should receive:
+   ```json
+   {
+     "status": "ok",
+     "service": "VELVET Dating App API",
+     "uptime": 12.4,
+     "env": "production"
+   }
+   ```
+
+---
+
+### Part 3: Vercel Frontend Deployment
+
+1. Navigate to the [Vercel Dashboard](https://vercel.com) and click **Add New... > Project**.
+2. Import your GitHub repository: `PLayerNightQueen16/Velvet_Dating_App`.
+3. Configure project settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: Click *Edit* and select `client`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Add **Environment Variables**:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | `https://velvet-api.onrender.com/api` |
+| `VITE_SERVER_URL` | `https://velvet-api.onrender.com` |
+
+5. Click **Deploy**. Vercel will install dependencies, build the client, and deploy the application to a high-speed CDN URL (e.g. `https://velvet-dating.vercel.app`).
+6. **Final CORS Sync**: If your final Vercel domain differs from what you entered in Render, update `CLIENT_URL` in your Render Environment Variables to match your Vercel domain, and trigger a redeploy of Render.
+
+---
+
+## 🔒 Production Security & Cookie Architecture
+
+VELVET adheres to strict modern web security practices:
+
+1. **Cross-Origin HTTP-Only Authentication**:
+   - In production (`NODE_ENV=production`), session cookies are marked with `SameSite=None; Secure=true; HttpOnly=true; Path=/`.
+   - Express enables `app.set("trust proxy", 1)` so that HTTPS forwarded through Render's reverse proxy correctly satisfies the `Secure` attribute.
+2. **Strict CORS Policy**:
+   - Access-Control headers are restricted exclusively to the configured `CLIENT_URL` (and Vercel preview domains). Permissive wildcards (`*`) are disallowed for credentialed endpoints.
+3. **Socket.IO Session Synchronization**:
+   - WebSocket handshakes inspect the signed HTTP-only cookie to authenticate clients, rejecting unauthenticated socket connections before any room join.
+4. **Token Invalidation Versioning**:
+   - Changing passwords or updating critical security settings increments the user's `tokenVersion`, instantly invalidating all active web and WebSocket sessions across all devices.
+
+---
+
+## 📡 API Reference
+
+All requests and responses use standard `application/json` payloads. Authenticated routes require the `velvet_token` HTTP-only cookie.
+
+### Authentication (`/api/auth`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `POST` | `/api/auth/register` | Register new account (name, username, email, password) | No |
+| `POST` | `/api/auth/login` | Authenticate with credentials and receive HTTP-only cookie | No |
+| `POST` | `/api/auth/logout` | Clear authentication cookie and terminate session | Yes |
+| `GET` | `/api/auth/me` | Fetch currently authenticated user session | Yes |
+
+### Profile (`/api/profile`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `GET` | `/api/profile/me` | Retrieve own complete profile | Yes |
+| `PATCH` | `/api/profile/me` | Partially update profile details | Yes |
+| `PUT` | `/api/profile/me/onboarding` | Save onboarding step progress | Yes |
+| `POST` | `/api/profile/me/complete` | Validate criteria and mark profile as complete | Yes |
+| `POST` | `/api/profile/me/photos` | Upload a photo file (multipart/form-data or URL) | Yes |
+| `PATCH` | `/api/profile/me/photos/:id/primary` | Set designated primary photo | Yes |
+| `DELETE` | `/api/profile/me/photos/:id` | Remove a photo from profile | Yes |
+| `GET` | `/api/profile/me/photos/upload-signature` | Retrieve Cloudinary signature for direct upload | Yes |
+
+### Discovery & Swiping (`/api/discovery`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `GET` | `/api/discovery` | Paginated candidate profiles matching preferences | Yes |
+| `POST` | `/api/discovery/:userId/like` | Send like; creates mutual match if reciprocal interest exists | Yes |
+| `POST` | `/api/discovery/:userId/pass` | Pass on candidate profile | Yes |
+| `POST` | `/api/discovery/:userId/block` | Block user from discovery and deactivate matches | Yes |
+| `DELETE` | `/api/discovery/:userId/block` | Unblock a previously blocked user | Yes |
+
+### Likes & Matches (`/api/likes`, `/api/matches`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `GET` | `/api/likes/received` | List users who have liked the authenticated user | Yes |
+| `GET` | `/api/likes/sent` | List profiles the authenticated user has liked | Yes |
+| `DELETE` | `/api/likes/:userId` | Withdraw an active outgoing like | Yes |
+| `GET` | `/api/matches` | Retrieve all active mutual matches with preview data | Yes |
+| `DELETE` | `/api/matches/:matchId` | Safely and durably unmatch a connection | Yes |
+
+### Real-Time Chat (`/api/chat`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `GET` | `/api/chat/conversations` | List all active match conversations with latest messages | Yes |
+| `GET` | `/api/chat/messages/:matchId` | Fetch message history for a specific match | Yes |
+| `POST` | `/api/chat/messages/:matchId` | Send message via REST API (fallback for WebSocket) | Yes |
+| `POST` | `/api/chat/read/:matchId` | Mark conversation messages as read | Yes |
+| `GET` | `/api/chat/unread` | Get unread message counts across all conversations | Yes |
+
+### Safety, Privacy & Account (`/api/blocks`, `/api/reports`, `/api/privacy`, `/api/account`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|:---:|
+| `GET` | `/api/blocks` | List currently blocked users | Yes |
+| `POST` | `/api/reports` | Submit a safety moderation report | Yes |
+| `GET` | `/api/privacy` | Retrieve current privacy and discoverability settings | Yes |
+| `PATCH` | `/api/privacy` | Update discoverability or activity visibility | Yes |
+| `POST` | `/api/account/change-password` | Update password and invalidate other sessions | Yes |
+| `DELETE` | `/api/account` | Permanently delete account and execute data cleanup | Yes |
+
+---
+
+## 📄 License & Attribution
+
+Designed and engineered with passion for the **VELVET** Dating Platform.
+
+All demo imagery used in development is sourced from copyright-free Unsplash collections with royalty-free licensing.
