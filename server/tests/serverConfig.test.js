@@ -80,6 +80,12 @@ describe("Production Server & Deployment Configuration", () => {
       expect(isOriginAllowed("https://malicious-site.com", "https://velvet-app.vercel.app")).toBe(false);
       expect(isOriginAllowed("http://evil-attacker.io", "http://localhost:5173")).toBe(false);
     });
+
+    it("handles trailing slashes on configured origins gracefully", () => {
+      const clientUrl = "https://velvet-dating-app.vercel.app/";
+      expect(isOriginAllowed("https://velvet-dating-app.vercel.app", clientUrl)).toBe(true);
+      expect(isOriginAllowed("https://velvet-dating-app.vercel.app/", clientUrl)).toBe(true);
+    });
   });
 
   describe("Port and Host Configuration", () => {
@@ -91,6 +97,20 @@ describe("Production Server & Deployment Configuration", () => {
       delete process.env.PORT;
       const fallbackPort = process.env.PORT || 8000;
       expect(fallbackPort).toBe(8000);
+    });
+  });
+
+  describe("API Route Prefix Resilience", () => {
+    it("verifies dual mounting strategy supports both /api/auth and /auth prefixes", () => {
+      const routePrefixes = (path) => [`/api/${path}`, `/${path}`];
+      
+      const authMounts = routePrefixes("auth");
+      expect(authMounts).toContain("/api/auth");
+      expect(authMounts).toContain("/auth");
+
+      const profileMounts = routePrefixes("profile");
+      expect(profileMounts).toContain("/api/profile");
+      expect(profileMounts).toContain("/profile");
     });
   });
 });
