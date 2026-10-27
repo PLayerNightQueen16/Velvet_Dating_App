@@ -42,6 +42,7 @@ export default function ConversationList({
   const currentSelectedId = selectedMatchId || activeMatchId;
   const handleSelect = onSelectMatch || onSelectConversation;
   const [searchTerm, setSearchTerm] = useState("");
+  const [imageErrors, setImageErrors] = useState({});
 
   const filteredConversations = conversations.filter((c) => {
     if (!searchTerm.trim()) return true;
@@ -113,10 +114,11 @@ export default function ConversationList({
         ) : (
           filteredConversations.map((conv) => {
             const isSelected = currentSelectedId === conv.matchId;
-            const partnerPhoto =
+            const rawPhotoUrl =
               conv.partner?.photos?.find((p) => p.isPrimary)?.url ||
               conv.partner?.photos?.[0]?.url ||
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
+              null;
+            const partnerPhoto = imageErrors[conv.matchId] ? null : rawPhotoUrl;
 
             return (
               <button
@@ -132,11 +134,25 @@ export default function ConversationList({
               >
                 {/* Partner Avatar with Unread Glow */}
                 <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border border-[#F2B6C2]/20 bg-[#2D121B]">
-                  <img
-                    src={partnerPhoto}
-                    alt={conv.partner?.name || "Partner"}
-                    className="w-full h-full object-cover"
-                  />
+                  {partnerPhoto ? (
+                    <img
+                      src={partnerPhoto}
+                      alt={conv.partner?.name || "Partner"}
+                      className="w-full h-full object-cover"
+                      onError={() =>
+                        setImageErrors((prev) => ({ ...prev, [conv.matchId]: true }))
+                      }
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg, #8B1E3F 0%, #3A0D1A 100%)" }}
+                    >
+                      <span className="text-lg font-bold" style={{ color: "#F2B6C2" }}>
+                        {(conv.partner?.name || "?")[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Info & Last Message */}

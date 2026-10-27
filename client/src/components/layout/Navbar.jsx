@@ -1,10 +1,65 @@
 import { useState, useEffect } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Menu, X, LogOut, Settings as SettingsIcon } from "lucide-react";
 import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
 import { getUnreadCounts } from "../../services/api";
 import { getSocket } from "../../services/socket";
+
+/** Returns the primary photo URL for a user object, or null */
+function getUserPhotoUrl(user) {
+  if (!user) return null;
+  if (Array.isArray(user.photos) && user.photos.length > 0) {
+    return (
+      user.photos.find((p) => p.isPrimary)?.url ||
+      user.photos[0]?.url ||
+      null
+    );
+  }
+  return null;
+}
+
+/** Small circular avatar — shows photo or gradient monogram fallback */
+function UserAvatar({ user, size = 32 }) {
+  const [imgError, setImgError] = useState(false);
+  const photoUrl = getUserPhotoUrl(user);
+  const initial = (user?.name || user?.username || "?")[0].toUpperCase();
+
+  if (photoUrl && !imgError) {
+    return (
+      <img
+        src={photoUrl}
+        alt={user?.name || "Your profile"}
+        onError={() => setImgError(true)}
+        style={{ width: size, height: size }}
+        className="rounded-full object-cover border-2 border-[#F2B6C2]/40 shadow-sm shrink-0"
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: size,
+        height: size,
+        fontSize: size * 0.45,
+        fontWeight: "bold",
+        flexShrink: 0,
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #8B1E3F 0%, #3A0D1A 100%)",
+        color: "#F2B6C2",
+        border: "2px solid rgba(242,182,194,0.4)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+      }}
+    >
+      {initial}
+    </span>
+  );
+}
+
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -160,7 +215,7 @@ export default function Navbar() {
                   }
                   aria-label="Edit your profile"
                 >
-                  <User size={13} className="text-[#F2B6C2]" />
+                  <UserAvatar user={user} size={24} />
                   <span>{user.name?.split(" ")[0] || "Profile"}</span>
                 </NavLink>
 
@@ -277,10 +332,14 @@ export default function Navbar() {
               <>
                 <li className="pt-2 border-t border-[rgba(242,182,194,0.12)] mt-2">
                   <Link
-                    to="/app"
-                    className="block py-3 px-4 rounded-xl text-base font-medium text-[#F8EDEB]"
+                    to="/profile/edit"
+                    className="flex items-center gap-3 py-3 px-4 rounded-xl text-base font-medium text-[#F8EDEB] hover:bg-[#3A0D1A]/50 transition-colors"
                   >
-                    Account ({user.name})
+                    <UserAvatar user={user} size={36} />
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm text-[#F8EDEB]">{user.name}</span>
+                      <span className="text-xs text-[#F2B6C2]/70">View & Edit Profile</span>
+                    </div>
                   </Link>
                 </li>
                 <li>

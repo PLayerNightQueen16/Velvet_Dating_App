@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserX, Calendar, MapPin, Eye, Sparkles, MessageCircle } from "lucide-react";
 
@@ -13,11 +13,13 @@ import { UserX, Calendar, MapPin, Eye, Sparkles, MessageCircle } from "lucide-re
  */
 export default function MatchCard({ match, onUnmatch, onViewProfile }) {
   const { matchId, matchedAt, partner } = match;
+  const [imgError, setImgError] = useState(false);
 
   const photoUrl =
-    partner?.photos?.find((p) => p.isPrimary)?.url ||
-    partner?.photos?.[0]?.url ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80";
+    !imgError &&
+    (partner?.photos?.find((p) => p.isPrimary)?.url ||
+      partner?.photos?.[0]?.url) ||
+    null;
 
   const formattedDate = matchedAt
     ? new Date(matchedAt).toLocaleDateString(undefined, {
@@ -34,12 +36,27 @@ export default function MatchCard({ match, onUnmatch, onViewProfile }) {
     >
       {/* Photo Container */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#2D121B]">
-        <img
-          src={photoUrl}
-          alt={partner?.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={partner?.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div
+            className="h-full w-full flex flex-col items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #3A0D1A 0%, #1A0F13 100%)" }}
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2" style={{ background: "rgba(139,30,63,0.3)" }}>
+              <span className="text-3xl font-bold" style={{ color: "#F2B6C2" }}>
+                {(partner?.name || "?")[0]}
+              </span>
+            </div>
+            <p className="text-xs" style={{ color: "rgba(242,182,194,0.5)" }}>No photo yet</p>
+          </div>
+        )}
 
         {/* Gradient Overlay */}
         <div
