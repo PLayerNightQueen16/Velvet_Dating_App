@@ -67,7 +67,11 @@ export async function getIncomingLikes(req, res) {
     const profiles = [];
     for (const record of likeRecords) {
       const likerUser = record.liker;
-      if (likerUser && likerUser.profileCompleted) {
+      if (
+        likerUser &&
+        likerUser.profileCompleted &&
+        likerUser.privacy?.discoverable !== false
+      ) {
         const serialized = likerUser.toDiscoveryProfile();
         profiles.push({
           ...serialized,
@@ -160,7 +164,11 @@ export async function getOutgoingLikes(req, res) {
     const profiles = [];
     for (const record of likeRecords) {
       const likedUser = record.liked;
-      if (likedUser && likedUser.profileCompleted) {
+      if (
+        likedUser &&
+        likedUser.profileCompleted &&
+        likedUser.privacy?.discoverable !== false
+      ) {
         const serialized = likedUser.toDiscoveryProfile();
         profiles.push({
           ...serialized,

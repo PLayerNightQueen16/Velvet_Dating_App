@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { connectDB } from "./utils/connectDB.js";
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -10,7 +12,14 @@ import discoveryRoutes from "./routes/discovery.routes.js";
 import likesRoutes from "./routes/likes.routes.js";
 import matchesRoutes from "./routes/matches.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import blocksRoutes from "./routes/blocks.routes.js";
+import reportsRoutes from "./routes/reports.routes.js";
+import privacyRoutes from "./routes/privacy.routes.js";
+import accountRoutes from "./routes/account.routes.js";
 import { initSocket } from "./socket/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +58,9 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
+// Serve local uploads folder statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -66,6 +78,10 @@ app.use("/api/discovery", discoveryRoutes);
 app.use("/api/likes", likesRoutes);
 app.use("/api/matches", matchesRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/blocks", blocksRoutes);
+app.use("/api/reports", reportsRoutes);
+app.use("/api/privacy", privacyRoutes);
+app.use("/api/account", accountRoutes);
 
 // Create HTTP server and initialize Socket.IO
 const httpServer = http.createServer(app);

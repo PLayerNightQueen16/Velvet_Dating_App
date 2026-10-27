@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, logout, getMe } from "../controllers/auth.controller.js";
+import { register, login, logout, getMe, changePassword } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { createRateLimiter } from "../middlewares/rateLimiter.js";
 
@@ -17,5 +17,6 @@ router.post("/register", authLimiter, register);
 router.post("/login", authLimiter, login);
 router.post("/logout", logout);
 router.get("/me", requireAuth, getMe);
+router.patch("/password", requireAuth, authLimiter, changePassword);
 
 export default router;

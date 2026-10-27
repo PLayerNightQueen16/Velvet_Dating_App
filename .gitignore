@@ -30,3 +30,7 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Uploads
+uploads/
+server/uploads/

@@ -5,13 +5,13 @@ const COOKIE_NAME = "velvet_token";
 /**
  * Signs a JWT for an authenticated user ID.
  */
-export function generateToken(userId) {
+export function generateToken(userId, tokenVersion = 0) {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET is not configured in server environment.");
   }
 
-  return jwt.sign({ userId }, secret, {
+  return jwt.sign({ userId, tokenVersion }, secret, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 }

@@ -155,6 +155,8 @@ export async function getDiscovery(req, res) {
       "photos.0": { $exists: true },
       // Strict 18+ and age range filter on server
       dateOfBirth: { $gte: minBirthDate, $lte: maxBirthDate },
+      // Must have discoverability enabled
+      "privacy.discoverable": { $ne: false },
     };
 
     // 1. Forward Gender Compatibility:
@@ -271,6 +273,21 @@ export async function likeProfile(req, res) {
       return res.status(403).json({
         success: false,
         message: "Action not permitted due to safety restrictions.",
+      });
+    }
+
+    // Check discoverability
+    if (targetUser.privacy?.discoverable === false) {
+      return res.status(403).json({
+        success: false,
+        message: "This profile is currently not discoverable and cannot receive new likes.",
+      });
+    }
+
+    if (actor.privacy?.discoverable === false) {
+      return res.status(403).json({
+        success: false,
+        message: "You must enable discoverability in your privacy settings to send likes.",
       });
     }
 

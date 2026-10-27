@@ -12,6 +12,7 @@ import Discovery from "./pages/Discovery";
 import LikesPage from "./pages/LikesPage";
 import MatchesPage from "./pages/MatchesPage";
 import Chat from "./pages/Chat";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AnimatedRoseBackground from "./components/ui/AnimatedRoseBackground";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -33,17 +34,7 @@ function SmartRedirect() {
 /* ============================================================
    Route placeholder definitions (future batches)
    ============================================================ */
-const placeholderRoutes = [
-  {
-    path: "/settings",
-    props: {
-      title: "Settings",
-      description: "Manage your account, privacy, notifications, and preferences.",
-      icon: "⚙️",
-      backLabel: "Back Home",
-    },
-  },
-];
+const placeholderRoutes = [];
 
 /* ============================================================
    Inner app — contains global animated background and routes
@@ -169,6 +160,16 @@ function AppInner() {
               element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected: settings & safety */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />

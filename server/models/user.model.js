@@ -13,7 +13,7 @@ import {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernameRegex = /^[a-zA-Z0-9_]+$/;
-const httpsUrlRegex = /^https:\/\/.+/i;
+const photoUrlRegex = /^(https:\/\/|http:\/\/localhost|http:\/\/127\.0\.0\.1|\/uploads\/).+/i;
 
 // Subschema for User Photos
 const photoSchema = new mongoose.Schema(
@@ -22,7 +22,7 @@ const photoSchema = new mongoose.Schema(
       type: String,
       required: [true, "Photo URL is required"],
       trim: true,
-      match: [httpsUrlRegex, "Photo URL must be a secure HTTPS link"],
+      match: [photoUrlRegex, "Photo URL must be a secure HTTPS link"],
     },
     publicId: {
       type: String,
@@ -82,6 +82,25 @@ const preferencesSchema = new mongoose.Schema(
       default: 50,
       min: [1, "Preferred distance must be at least 1 km"],
       max: [500, "Preferred distance cannot exceed 500 km"],
+    },
+  },
+  { _id: false }
+);
+
+// Subschema for Privacy & Discoverability Settings
+const privacySchema = new mongoose.Schema(
+  {
+    discoverable: {
+      type: Boolean,
+      default: true,
+    },
+    showOnlineStatus: {
+      type: Boolean,
+      default: true,
+    },
+    showLastActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { _id: false }
@@ -214,6 +233,22 @@ const userSchema = new mongoose.Schema(
       default: () => ({}),
     },
 
+    // Privacy & Discoverability Settings (Batch 7)
+    privacy: {
+      type: privacySchema,
+      default: () => ({
+        discoverable: true,
+        showOnlineStatus: true,
+        showLastActive: true,
+      }),
+    },
+
+    // Session Security & Invalidation Token Version (Batch 7)
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+
     // Profile Completion State
     profileCompleted: {
       type: Boolean,
@@ -291,6 +326,11 @@ userSchema.methods.toSafeObject = function () {
     gender: this.gender,
     location: this.location,
     profileCompleted: this.profileCompleted,
+    privacy: this.privacy || {
+      discoverable: true,
+      showOnlineStatus: true,
+      showLastActive: true,
+    },
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };
@@ -322,6 +362,13 @@ userSchema.methods.toSafeProfile = function (isOwner = false) {
       isPrimary: p.isPrimary,
     })),
     preferences: isOwner ? this.preferences : undefined,
+    privacy: isOwner
+      ? (this.privacy || {
+          discoverable: true,
+          showOnlineStatus: true,
+          showLastActive: true,
+        })
+      : undefined,
     profileCompleted: this.profileCompleted,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,

@@ -106,7 +106,7 @@ export async function register(req, res) {
     await newUser.save();
 
     // Issue JWT in HTTP-only cookie
-    const token = generateToken(newUser._id);
+    const token = generateToken(newUser._id, newUser.tokenVersion || 0);
     setAuthCookie(res, token);
 
     return res.status(201).json({
@@ -181,7 +181,7 @@ export async function login(req, res) {
     }
 
     // Issue JWT in HTTP-only cookie
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion || 0);
     setAuthCookie(res, token);
 
     return res.status(200).json({
@@ -245,3 +245,78 @@ export async function getMe(req, res) {
     });
   }
 }
+
+/**
+ * Change password for authenticated user
+ * PATCH /api/auth/password
+ */
+export async function changePassword(req, res) {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Authentication required." });
+    }
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || typeof currentPassword !== "string") {
+      return res.status(400).json({ success: false, message: "Current password is required." });
+    }
+
+    if (!newPassword || typeof newPassword !== "string") {
+      return res.status(400).json({ success: false, message: "New password is required." });
+    }
+
+    if (confirmPassword !== undefined && newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: "New password and confirmation do not match." });
+    }
+
+    // Must fetch user with password field since req.user excluded password
+    const userWithPassword = await User.findById(user._id);
+    if (!userWithPassword) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    // Verify current password
+    const isCurrentValid = await userWithPassword.comparePassword(currentPassword);
+    if (!isCurrentValid) {
+      return res.status(400).json({ success: false, message: "Incorrect current password." });
+    }
+
+    // Validate new password rules (min 6, max 128)
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "New password must be at least 6 characters long." });
+    }
+    if (newPassword.length > 128) {
+      return res.status(400).json({ success: false, message: "New password cannot exceed 128 characters." });
+    }
+
+    // Reject unchanged password
+    const isSamePassword = await userWithPassword.comparePassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password cannot be the same as your current password.",
+      });
+    }
+
+    // Hash new password with bcrypt
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    userWithPassword.password = hashedPassword;
+    userWithPassword.tokenVersion = (userWithPassword.tokenVersion || 0) + 1;
+    await userWithPassword.save();
+
+    // Rotate session cookie with newly incremented tokenVersion
+    const newToken = generateToken(userWithPassword._id, userWithPassword.tokenVersion);
+    setAuthCookie(res, newToken);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    console.error("changePassword error:", error.message);
+    return res.status(500).json({ success: false, message: "Failed to update password." });
+  }
+}
+
